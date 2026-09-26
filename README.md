@@ -4,7 +4,7 @@
 
 > **Define once. Run anywhere.**
 
-This is my Harness is an open project incubated by [Formosa.dev](https://formosa.dev), a technology community from Formosa, Argentina. Its primary purpose is not to create another prompt marketplace or another incompatible agent format. Its purpose is to standardize what a *harness* is, how it is packaged, how its capabilities are declared, how it is distributed, how it is adapted to different runtimes, and how another machine can install and run it safely.
+This is my Harness is an open project incubated by [Formosa.dev](https://formosa.dev.ar), a technology community from Formosa, Argentina. Its primary purpose is not to create another prompt marketplace or another incompatible agent format. Its purpose is to standardize what a *harness* is, how it is packaged, how its capabilities are declared, how it is distributed, how it is adapted to different runtimes, and how another machine can install and run it safely.
 
 The ambition is global; the origin remains part of the project.
 
