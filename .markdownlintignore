@@ -1,0 +1,4 @@
+# Legacy source documents are historical inputs, not linted artifacts.
+# They use line-break and escaping conventions that predate this repository's style.
+Formosa.dev Harnesses*
+This is my Harness*

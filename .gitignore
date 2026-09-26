@@ -1,0 +1,53 @@
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# --- Environment and secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Node / TypeScript (F17+ web/desktop, labs spikes) ---
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# --- Rust (harness-core / harness CLI) ---
+# NOTE: Cargo.lock is intentionally NOT ignored — the workspace ships binaries,
+# so the lockfile is committed for reproducible builds.
+target/
+**/*.rs.bk
+
+# --- Python (labs experiments) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Go (possible labs experiments) ---
+*.test
+*.out
+
+# --- Tooling caches ---
+.eslintcache
+.cache/
+.turbo/
+
+# --- Local build output ---
+*.log
+
+# --- Local agent tooling state (machine-specific; never shared) ---
+.atl/

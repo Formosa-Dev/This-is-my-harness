@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Lints repository documentation. Config: .markdownlint.json
+      # The legacy source documents (README v0.2 / Decisiones / doc 2) are excluded
+      # via .markdownlintignore and the explicit negation globs below.
+      - name: Run markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            **/*.md
+            !Formosa.dev Harnesses*
+            !This is my Harness*
+
+  schema-validation:
+    name: JSON Schema validation (placeholder)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Placeholder. This asserts that every JSON document under schemas/ parses.
+      # Once a real validator exists (F2), replace this with JSON Schema
+      # metaschema + instance validation.
+      - name: Validate that schemas/*.json parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          files=(schemas/**/*.json schemas/*.json)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No JSON files under schemas/ yet — skipping."
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "Checking $f"
+            python3 -m json.tool "$f" > /dev/null
+          done
+          echo "All schema JSON files parsed."
+
+      # Placeholder for adapter/extension/example schema checks added in later phases.
+      - name: Validate extension and conformance JSON (placeholder)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          files=(extensions/**/*.json conformance/**/*.json examples/**/*.json)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No JSON files in extensions/, conformance/ or examples/ yet — skipping."
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "Checking $f"
+            python3 -m json.tool "$f" > /dev/null
+          done
+          echo "All extension/conformance/example JSON files parsed."

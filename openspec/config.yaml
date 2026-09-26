@@ -1,0 +1,115 @@
+schema: spec-driven
+
+# Project-specific SDD context. Standard-first: the standard and toolchain come
+# first; the social / registry / web / desktop layers are DOWNSTREAM consumers.
+context: |
+  Product: This is my Harness — an OPEN STANDARD + TOOLCHAIN for packaging, distributing,
+  validating and running portable agentic systems ("Define once. Run anywhere."), incubated
+  by Formosa.dev. The social network / registry / public profiles / feed / Verified Use are
+  DOWNSTREAM layers that consume conformant artifacts and MUST NOT define the standard's
+  semantics.
+  Sources of truth: `This is my Harness — README v0.2.md` (English) and
+  `This is my Harness — Decisiones Post-Documento 2 ... v0.1.md` (Spanish, sections 1-62).
+  Also engraved in Engram: `architecture/product-plan` and the `build-progress` phase index.
+  Surfaces (what this repo actually ships): Spec (spec/, schemas/), Toolchain (packages/),
+  Adapters (adapters/), Distribution (OCI/ORAS + signatures, later phases). The web/desktop/
+  registry surfaces are NOT part of this repo's technical core.
+  Stack (decided, not yet implemented): Harness Core in RUST — `harness-core` (resolver,
+  planning engine, snapshot/apply/verify/revert, path-safety, hashing, OCI client, signature
+  verification) plus `harness` (single cross-platform Rust CLI, JSON output, typed states).
+  Initial surface is CLI-only; the Desktop is a future client of the same Core. `spec/` and
+  `schemas/` are LANGUAGE-NEUTRAL: the JSON Schema is the single source of truth, which keeps
+  the language decision reversible. See docs/adr/0001-core-language.md.
+  Invariants: project scope by default; preview + snapshot + rollback on every managed write;
+  never auto-execute third-party scripts/hooks/MCP without approval; no code execution during
+  Preview; never store runtime credentials; immutable content-addressed releases with hash and
+  signature verified before Apply; never silently overwrite conflicts; never delete unmanaged
+  files; path-traversal and symlink-escape blocked; trust label is precise, never "100% safe".
+  Status: pre-alpha (apiVersion thisismyharness.dev/v1alpha1). No stable v1.0, no production CLI,
+  no official installer. Do NOT declare v1.0 before the Reference Harnesses.
+
+rules:
+  proposal:
+    - Read the source-of-truth docs (README v0.2 + Decisiones v0.1) and the Engram `build-progress` index BEFORE proposing; identify the target phase (F0-F17) and cite the sections that motivate the change.
+    - State which surface(s) are touched: Spec (spec/, schemas/), Toolchain (packages/), Adapters (adapters/), or Distribution. Do NOT model the social/registry/web/desktop layer as the semantic center (§57).
+    - State the target `apiVersion` (currently thisismyharness.dev/v1alpha1) and whether the change alters the manifest, package layout, install protocol, or compatibility model.
+    - Include a rollback plan for any change touching install/apply/revert, trust, permissions, or supply chain.
+    - Call out the invariants that MUST NOT regress: preview-before-write, snapshot/rollback, no silent execution, no credential storage, no silent conflict overwrite, no deletion of unmanaged files, path-traversal/symlink-escape protection (§50).
+    - State the risk class (A Passive, B Tooling, C Executable, D Privileged) and the default autonomy level (0-3) of the proposed change (§25, §49).
+  specs:
+    - Use Given/When/Then for every scenario and RFC 2119 keywords (MUST, MUST NOT, SHALL, SHOULD, MAY) in requirements.
+    - Use ONLY the controlled vocabulary in spec/glossary.md; do not invent synonymous terms (§6, §25, §49).
+    - Keep the Core small: a new capability belongs in the Core only if required by nearly every harness and free of vendor lock-in; otherwise specify it as a versioned extension (§4).
+    - Compose existing open standards (MCP, WebMCP, MCP Apps, AG-UI, A2UI, A2A, Agent Skills, MCP Tasks, Arazzo, OpenTelemetry, OCI/ORAS, Sigstore) instead of inventing competing formats (§5, §57).
+    - Keep Runtime and Model strictly separate; express capabilities as contracts and name concrete vendors only as preferred/alternative implementations. Never hard-code Laya/Jev or any model vendor into the Core (§6, §57).
+    - Make semantics testable WITHOUT any UI; runtime/provider behavior lives in adapters, never in the UI. Capability loss MUST be explicit, never silent (§2.4).
+    - Cover failure and adversarial paths: crash during Apply, disk full, permission denied, file changed externally, malformed manifest/artifact, symlink escape, path traversal, invalid or missing signature, malicious hook/script pattern (§50, §51).
+    - Never claim "100% safe"; state exactly what was verified (manifest valid, hash verified, signature verified, author identity verified, maintainer reviewed, runtime tested) (§36).
+  design:
+    - Prefer ports-and-adapters: every runtime implements the canonical Runtime Adapter Contract — detect, installPlan, install, authStatus, inspectExisting, capabilities, planApply, apply, verify, launch, revert (11 operations, §2.4).
+    - Keep spec/ and schemas/ language-neutral; JSON Schema is the single source of truth. The Rust Core is a reference implementation, not the definition of the standard.
+    - Document the trust signals, risk class and autonomy level the change affects, and exactly what was verified.
+    - Specify project lock, atomic writes, operation journal, snapshot-before-write and crash-recovery semantics for ANY filesystem mutation (§50).
+    - Include sequence diagrams for install/apply/revert and for the one-command bootstrap where relevant.
+    - Record architecture decisions with rationale AND rejected alternatives as ADRs in docs/adr/ (see docs/adr/0000-template.md). Standard-semantics changes go through an RFC in rfcs/ (§44).
+    - Never store, request or exfiltrate runtime provider credentials or tokens; surface auth status only (§57, §50).
+    - Local services bind to localhost by default; broader exposure must be explicit and approved (§13).
+  tasks:
+    - Group by build phase (F0 Foundations, F1 Core Spec, F2 schema/validator, F3 fixtures, F4 planning, F5 mutation, F6 Codex adapter, F7 artifact/trust, F8 bootstrap, F9 agent-native, F10-F11 reference harnesses, F12 adapters, F13 cross-platform, F14 remaining harnesses, F15 conformance, F16 gate v1.0, F17 social) and by module (harness-core, validator, cli, adapters, schemas, conformance).
+    - Use hierarchical numbering and keep each task completable in one session; each task should be one verifiable documentary or code unit (a contract, a schema, a fixture, an engine, an adapter, or a gate).
+    - Every apply/restore task MUST be paired with an adversarial/destructive test task (crash, disk full, permission denied, external file change, malformed artifact, symlink escape, path traversal, invalid signature, malicious hook).
+    - Do not plan product/social features before the phase that gates them; F17 (social) is GATED on the standard being real (§45, §54).
+  apply:
+    rules:
+      - Follow existing spec, schema and code patterns; do not introduce runtime- or vendor-specific branches into the Core or the UI.
+      - NEVER auto-run third-party scripts, hooks, MCP servers or setup commands during Preview or Apply; all execution requires explicit user or OS approval per the execution policy. No code execution during Preview (§50, §57).
+      - Treat a downloaded harness as untrusted third-party code, not inert configuration.
+      - Never store, request or exfiltrate runtime provider credentials or tokens.
+      - Every filesystem mutation MUST take a snapshot first, acquire the project lock, write atomically where possible, and write an operation journal for crash recovery. Never silently overwrite conflicts; never delete unmanaged files (§50).
+      - Block path traversal and symlink escape; verify hashes; verify signatures BEFORE Apply; never resolve arbitrary URLs as commands (§50, §51).
+      - There MUST be no absolute `--yes` flag capable of bypassing Elevated operations (§24).
+      - Scope the change to one work unit; keep tests and docs with the code they verify.
+      - Do NOT publish fictitious install commands and do NOT declare v1.0 before the Reference Harnesses (§42, §55, §57).
+    tdd: false
+    test_command: ""
+  verify:
+    rules:
+      - No product test runner exists yet (pre-alpha, foundations stage). Until tooling exists, verify by cross-checking against the source-of-truth docs, the delta specs, the ADRs and the tasks.
+      - "Once tooling exists, run per-surface gates: `cargo test` / `cargo clippy` / `cargo fmt --check` for harness-core and adapters (unit + golden fixtures + the destructive suite); `markdownlint` for docs; schema validation for schemas/ and extensions/."
+      - Prove Core paths without any UI; replay golden fixtures per runtime and compare the expected diff.
+      - For any install/apply/revert change, include the destructive suite: crash, disk full, permission denied, external file change, malformed artifact, symlink escape, path traversal, invalid signature, malicious hook pattern (§50).
+      - Confirm no trust regression: preview-before-write, snapshot/rollback, no silent execution, no silent conflict overwrite, no unmanaged deletion still hold.
+      - Confirm the vocabulary matches spec/glossary.md and that no vendor was hard-coded into the Core.
+      - "Before any release decision, confirm the v1.0 gate (§55) is NOT being declared early: no v1.0 before the Reference Harnesses."
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging deltas that touch the install protocol, package format, trust model, permissions or supply chain.
+    - Preserve lineage to the source-of-truth doc sections and to the Engram observation IDs (build-progress/F<n>).
+    - Never delete or modify archived changes; the archive is the audit trail.
+    - Record which phase the change belongs to and update the phase observation in Engram, not just the archive.
+
+testing:
+  strict_tdd: false
+  reason: "Pre-alpha foundations stage: no product source code, no package-manager manifest, no test runner, no CI beyond the F0 skeleton, and no linter config for product code. Strict TDD cannot be enabled until tooling exists (F2+)."
+  detected: "2026-09-26"
+  runner:
+    command: ""
+    framework: "none detected"
+  planned:
+    - surface: harness-core (Rust library)
+      runner: cargo test
+      quality: "cargo clippy, cargo fmt --check"
+      layers: "unit (manifest parsing, path safety, merge rules, hash verification, adapter capability mapping), golden fixtures per runtime, destructive tests"
+    - surface: validator + cli (Rust)
+      runner: cargo test
+      quality: "cargo clippy, cargo fmt --check"
+      layers: "unit + JSON-output contract tests (typed states: planned, needs_confirmation, installed, verification_failed, reverted)"
+    - surface: documentation + schemas
+      runner: "markdownlint-cli2 (docs), JSON Schema validation (schemas/, extensions/)"
+      quality: ".markdownlint.json, schemas/* JSON parse + (later) metaschema validation"
+      layers: "repo hygiene gate (F0 skeleton: .github/workflows/ci.yml)"
+    - surface: cross-platform distribution (later phase)
+      matrix: "Windows x64, macOS arm64, Linux x64 (+ arm64 per release policy)"
+      extras: "SBOM generation, code signing/notarization, updater signing, checksums, signature verification before Apply"
