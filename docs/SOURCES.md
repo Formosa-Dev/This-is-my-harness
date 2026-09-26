@@ -32,24 +32,20 @@ The project evolved through several documents. Only the governing sources above 
 
 ---
 
-## Duplicate artifact — PENDING REMOVAL
+## Duplicate artifact — REMOVED
 
-The repository root contains **two byte-identical copies** of the lineage document:
+The repository root previously contained **two byte-identical copies** of the lineage document. The redundant copy has now been **removed**, once the foundational commit existed so the deletion is recoverable from git history.
 
-- `Formosa.dev Harnesses — Social Network + Harness Desktop Runtime Manager — Product & Architecture v0.1.md`
-- `Formosa.dev Harnesses — Social Network + Harness Desktop Runtime Manager — Product & Architecture v0.1 (1).md`
+- Kept: `Formosa.dev Harnesses — Social Network + Harness Desktop Runtime Manager — Product & Architecture v0.1.md`
+- Removed: `Formosa.dev Harnesses — Social Network + Harness Desktop Runtime Manager — Product & Architecture v0.1 (1).md` (recoverable from commit `5b7d562`)
 
-They are confirmed identical by SHA-256:
+They were confirmed identical by SHA-256:
 
 ```
 4FF9920C088EC2DA76B817DAA59CBDACB4848B1BB5620109154EA8E6C49A2F2B
 ```
 
-> **Status: PENDING — do not delete yet.**
->
-> The ` (1).md` copy is a redundant duplicate that **should be removed**, but removal is intentionally deferred until **after the foundational commit** exists, so the deletion is recoverable from git history. Until then, treat the two files as **one document**. This is a deliberate, documented exception to avoiding irreversible operations: at the time of writing, the repository has **zero commits**, so a deletion now could not be restored.
->
-> **Action required (post-foundational-commit):** delete the ` (1).md` copy in a dedicated commit, and update this section to record the removal.
+> **Status: RESOLVED.** One copy remains. The removed duplicate can be retrieved from the foundational commit (`5b7d562`) if ever needed.
 
 ---
 
