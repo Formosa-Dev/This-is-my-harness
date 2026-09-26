@@ -2,7 +2,7 @@
 
 > **Status:** pre-alpha · `apiVersion: thisismyharness.dev/v1alpha1`
 > **Normative:** This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174).
-> **See also:** [glossary](../glossary.md) · [STYLE](../STYLE.md) · [compatibility](compatibility.md) · [distribution](distribution.md) · [manifest](../manifest/README.md)
+> **See also:** [glossary](../glossary.md) · [STYLE](../STYLE.md) · [adapter contract](../adapter-contract/README.md) · [compatibility](compatibility.md) · [distribution](distribution.md) · [manifest](../manifest/README.md)
 
 This document defines conformance metadata: what it records, how it differs from a trust label, and what the canonical adapter contract requires. It answers §2.6 and §2.4.
 
@@ -57,10 +57,14 @@ A claim that a capability is supported MUST rest on the "Capability result" chec
 
 ## 4. Conformance of the Runtime Adapter Contract
 
-1. The canonical Runtime Adapter Contract has **eleven operations**: `detect`, `installPlan`, `install`, `authStatus`, `inspectExisting`, `capabilities`, `planApply`, `apply`, `verify`, `launch`, `revert`.
-2. The README lists eight operations. Where the two disagree, the eleven-operation contract governs; the discrepancy is resolved in favor of the eleven-operation contract (see [`compatibility.md`](compatibility.md), §4).
-3. An adapter's conformance metadata MUST state, per operation: whether it is implemented, and whether capability loss is reported. An operation that is implemented but silently discards behavior MUST be recorded as a failing check.
-4. An adapter that implements only a subset of the contract MUST be recorded as `partial` or `untested` for the missing operations, never as conformant.
+The Runtime Adapter Contract is defined normatively in [`../adapter-contract/README.md`](../adapter-contract/README.md).
+
+1. That document MUST be treated as the canonical source for the operation set.
+2. This document MUST NOT restate the operation list.
+3. An adapter's conformance metadata MUST state, per operation, whether the operation is implemented and whether capability loss is reported.
+4. An operation that is implemented but silently discards behavior MUST be recorded as a failing check.
+5. An adapter that implements only a subset of the contract MUST be recorded as `partial` or `untested` for the missing operations.
+6. An adapter that implements only a subset MUST NOT be recorded as conformant.
 
 ---
 
@@ -90,6 +94,6 @@ Conformance metadata and trust labels are distinct and MUST NOT be conflated.
 
 - Conformance is established by tests, never by declaration or badge.
 - Metadata records artifact, target, versions, fixtures, capability results and tool identity.
-- The canonical adapter contract has **11 operations**; the README's 8-op list is superseded.
+- The canonical adapter contract, including its eleven operations, is defined in [`../adapter-contract/README.md`](../adapter-contract/README.md).
 - Conformance metadata and trust labels are distinct and must not be conflated.
 - Conformance is per `(artifact, capability, target, version)`, and untested is not supported.

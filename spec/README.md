@@ -34,6 +34,8 @@ This directory contains the normative specification of This is my Harness. The s
 | Conformance metadata | [`core/conformance-metadata.md`](core/conformance-metadata.md) | F1-10 |
 | Profiles | [`core/profiles.md`](core/profiles.md) | F1-11 |
 | Core vs extension boundary | [`core/core-vs-extension.md`](core/core-vs-extension.md) | F1-12 |
+| Install protocol | [`install-protocol/README.md`](install-protocol/README.md) | F1-14 |
+| Runtime adapter contract | [`adapter-contract/README.md`](adapter-contract/README.md) | F1-15 |
 
 ---
 
@@ -64,11 +66,11 @@ The following directories are part of the planned structure but do not yet conta
 
 | Area | Directory | Status |
 | --- | --- | --- |
-| Install protocol | [`install-protocol/`](install-protocol/) | Planned. The pipeline is described in the glossary and in the decision record; a dedicated normative document is pending. |
-| Runtime adapter contract | [`adapter-contract/`](adapter-contract/) | Planned. The canonical operation set is the **eleven-operation** contract stated in [`core/compatibility.md`](core/compatibility.md), §4 and [`core/conformance-metadata.md`](core/conformance-metadata.md), §4; a dedicated normative document is pending. |
 | JSON Schema | [`../schemas/`](../schemas/) | Planned. Concrete schemas are a separate artifact and MUST conform to the semantics here. |
 
 An implementation MUST NOT claim conformance for an area whose specification is still marked planned.
+
+The install protocol and the runtime adapter contract are specified in [`install-protocol/README.md`](install-protocol/README.md) and [`adapter-contract/README.md`](adapter-contract/README.md). The adapter contract is the canonical source for the operation set referenced by [`core/compatibility.md`](core/compatibility.md) and [`core/conformance-metadata.md`](core/conformance-metadata.md).
 
 ---
 

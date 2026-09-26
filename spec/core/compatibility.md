@@ -2,9 +2,9 @@
 
 > **Status:** pre-alpha · `apiVersion: thisismyharness.dev/v1alpha1`
 > **Normative:** This document is normative. The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174).
-> **See also:** [glossary](../glossary.md) · [STYLE](../STYLE.md) · [conformance metadata](conformance-metadata.md) · [requirements](requirements.md) · [distribution](distribution.md)
+> **See also:** [glossary](../glossary.md) · [STYLE](../STYLE.md) · [adapter contract](../adapter-contract/README.md) · [conformance metadata](conformance-metadata.md) · [requirements](requirements.md) · [distribution](distribution.md)
 
-This document defines the compatibility levels and the rule that compatibility loss is always explicit. It answers §2.6 and the adapter-contract part of §2.4, and states which adapter contract is canonical.
+This document defines the compatibility levels and the rule that compatibility loss is always explicit. It answers §2.6 and the adapter-contract part of §2.4, and points to the canonical source for the Runtime Adapter Contract.
 
 ---
 
@@ -47,29 +47,19 @@ Rules:
 
 ---
 
-## 4. The Runtime Adapter Contract — canonical operation set
+## 4. The Runtime Adapter Contract — canonical source
 
-The canonical Runtime Adapter Contract has **eleven (11) operations**, as stated in §2.4 of the decision record:
+The Runtime Adapter Contract is defined normatively in [`adapter-contract/README.md`](../adapter-contract/README.md).
 
-```text
-detect
-installPlan
-install
-authStatus
-inspectExisting
-capabilities
-planApply
-apply
-verify
-launch
-revert
-```
-
-1. These eleven operations are **canonical**.
-2. The README lists eight operations (`detect`, `inspectExisting`, `capabilities`, `planApply`, `apply`, `verify`, `launch`, `revert`). Where the README and the decision record disagree, the **eleven-operation contract governs**; the discrepancy is resolved in favor of the eleven-operation contract. The README's list is an earlier, incomplete enumeration and is superseded.
-3. An adapter MUST implement the full eleven-operation contract to be conformant at the current `apiVersion`. Partial implementations MUST be reported as `partial` or `untested`, not as conformant.
-4. Each operation MUST report capability loss explicitly (§1). In particular, `capabilities`, `inspectExisting` and `planApply` MUST surface unsupported and adapted capabilities before any mutation.
-5. The adapter is the only place runtime- and vendor-specific behavior may live. Provider- and runtime-specific logic MUST NOT leak into the Core or into a user interface.
+1. That document MUST be treated as the canonical source for the operation set.
+2. This document MUST NOT restate the operation list.
+3. Where an earlier enumeration of the contract disagrees with [`adapter-contract/README.md`](../adapter-contract/README.md), that document governs.
+4. An adapter MUST implement the full contract to be conformant at the current `apiVersion`.
+5. An adapter that implements only a subset MUST be reported as `partial` or `untested`.
+6. An adapter that implements only a subset MUST NOT be reported as conformant.
+7. `capabilities()`, `inspectExisting()` and `planApply()` MUST surface unsupported and adapted capabilities before any mutation.
+8. Runtime- and vendor-specific behavior MUST live only in the adapter.
+9. Provider- and runtime-specific logic MUST NOT leak into the Core or into a user interface.
 
 ---
 
@@ -87,5 +77,5 @@ revert
 - Compatibility loss is always explicit; silent degradation is a conformance failure.
 - Levels: native · adapted · partial · untested · unsupported.
 - Compatibility is determined by the adapter and confirmed by conformance, never by badge.
-- The canonical Runtime Adapter Contract has **11 operations**; the README's 8-operation list is superseded.
+- The canonical Runtime Adapter Contract, including its eleven operations, is defined in [`adapter-contract/README.md`](../adapter-contract/README.md).
 - The Install Plan enumerates unsupported, adapted and unevaluated capabilities before Apply.
