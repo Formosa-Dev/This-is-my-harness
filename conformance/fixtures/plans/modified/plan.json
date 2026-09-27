@@ -1,0 +1,38 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "models/example-model.json",
+      "action": "modify",
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "conflicts": [],
+  "adaptations": [],
+  "unsupportedCapabilities": [],
+  "mcp": [],
+  "hooks": [],
+  "services": [],
+  "environmentVariableNames": [],
+  "risk": {
+    "effectiveClass": "A",
+    "autonomyLevel": 1
+  },
+  "snapshot": {
+    "id": "snap-modified-0001",
+    "covers": ["models/example-model.json"]
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm the modified model file digest matches the planned digest.",
+      "kind": "integrity"
+    }
+  ]
+}

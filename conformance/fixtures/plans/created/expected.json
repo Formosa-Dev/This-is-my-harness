@@ -1,0 +1,9 @@
+{
+  "$comment": "NON-NORMATIVE golden diff expectation (F3-05). The runtime diff is NOT evaluated until F4 ships the plan engine; `pending_f4` marks that explicitly. Until then the conformance runner only proves the plan shape is valid and that this projection is coherent with it.",
+  "pending_f4": true,
+  "created": [
+    { "path": "skills/example-skill/SKILL.md", "action": "create" }
+  ],
+  "modified": [],
+  "conflict": []
+}

@@ -1,0 +1,270 @@
+{
+  "$comment": "NON-NORMATIVE conformance fixture index (F3-08). The normative sources are spec/** and schemas/**. Every entry is evaluated by the runner in packages/validator/tests/conformance.rs: `root` is repo-relative, `runner` selects the case kind (manifest | symlink | plan), `expected` is the golden {status, diagnostics}. Conformant fixtures are rejected if they stop validating; non-conformant fixtures are rejected if they stop producing their expected diagnostic. The `plan` entries carry `pending_f4: true`: the runtime diff is not evaluated until F4 ships the plan engine (F3-05/F3-06).",
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "license": "CC0-1.0",
+  "counts": {
+    "fixtures": 21,
+    "conformant": 9,
+    "invalid": 6,
+    "path-safety": 3,
+    "plan": 3
+  },
+  "fixtures": [
+    {
+      "id": "example-minimal",
+      "category": "conformant",
+      "root": "examples/minimal",
+      "profile": null,
+      "conformant": true,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-developer",
+      "category": "conformant",
+      "root": "examples/developer",
+      "profile": "developer",
+      "conformant": true,
+      "capabilities": ["runtime.node", "models.text-generation"],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-web-agent",
+      "category": "conformant",
+      "root": "examples/web-agent",
+      "profile": "web-agent",
+      "conformant": true,
+      "capabilities": ["runtime.node", "models.structured-decision"],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-local-hybrid",
+      "category": "conformant",
+      "root": "examples/local-hybrid",
+      "profile": "local-hybrid",
+      "conformant": true,
+      "capabilities": [
+        "runtime.node",
+        "models.text-generation",
+        "models.structured-decision",
+        "backends.local-inference"
+      ],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-multi-agent",
+      "category": "conformant",
+      "root": "examples/multi-agent",
+      "profile": "multi-agent",
+      "conformant": true,
+      "capabilities": ["runtime.node", "models.structured-decision"],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-workflow-automation",
+      "category": "conformant",
+      "root": "examples/workflow-automation",
+      "profile": "workflow-automation",
+      "conformant": true,
+      "capabilities": ["runtime.node", "models.structured-decision"],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-partial-instructions-only",
+      "category": "conformant",
+      "root": "examples/partial-instructions-only",
+      "profile": null,
+      "conformant": true,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-partial-mcp-only",
+      "category": "conformant",
+      "root": "examples/partial-mcp-only",
+      "profile": null,
+      "conformant": true,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "example-partial-workflows-only",
+      "category": "conformant",
+      "root": "examples/partial-workflows-only",
+      "profile": null,
+      "conformant": true,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "invalid-manifest-malformed",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/manifest-malformed",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "error",
+        "diagnostics": [{ "path": "", "code": "parse.invalid" }]
+      }
+    },
+    {
+      "id": "invalid-manifest-field-missing",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/manifest-field-missing",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "", "code": "schema.required" }]
+      }
+    },
+    {
+      "id": "invalid-manifest-wrong-type-metadata",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/manifest-wrong-type-metadata",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "/metadata", "code": "schema.type" }]
+      }
+    },
+    {
+      "id": "invalid-dependency-ref-short",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/dependency-ref-short",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [
+          { "path": "/spec/extends/0/reference", "code": "schema.pattern" },
+          { "path": "/spec/extends/0/reference", "code": "semantic.identity_ref_short_forbidden" }
+        ]
+      }
+    },
+    {
+      "id": "invalid-capability-unknown",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/capability-unknown",
+      "profile": null,
+      "conformant": false,
+      "capabilities": ["models.does-not-exist"],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [
+          {
+            "path": "/spec/requirements/modelCapabilities/0/capability",
+            "code": "capability.unknown"
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-permission-not-declared",
+      "category": "invalid",
+      "root": "conformance/fixtures/invalid/permission-not-declared",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "/spec/permissions", "code": "semantic.permission_coverage" }]
+      }
+    },
+    {
+      "id": "path-traversal",
+      "category": "path-safety",
+      "root": "conformance/fixtures/path-safety/traversal",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "/spec/components/0/path", "code": "path.traversal" }]
+      }
+    },
+    {
+      "id": "path-absolute",
+      "category": "path-safety",
+      "root": "conformance/fixtures/path-safety/absolute",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "manifest",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "/spec/components/0/path", "code": "path.absolute" }]
+      }
+    },
+    {
+      "id": "path-symlink-escape",
+      "category": "path-safety",
+      "root": "conformance/fixtures/path-safety/symlink-escape",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "symlink",
+      "expected": {
+        "status": "invalid",
+        "diagnostics": [{ "path": "/spec/components/0/path", "code": "path.symlink_escape" }]
+      }
+    },
+    {
+      "id": "plan-created",
+      "category": "plan",
+      "root": "conformance/fixtures/plans/created",
+      "manifest": "plan.json",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "plan",
+      "pending_f4": true,
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "plan-modified",
+      "category": "plan",
+      "root": "conformance/fixtures/plans/modified",
+      "manifest": "plan.json",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "plan",
+      "pending_f4": true,
+      "expected": { "status": "valid", "diagnostics": [] }
+    },
+    {
+      "id": "plan-conflict",
+      "category": "plan",
+      "root": "conformance/fixtures/plans/conflict",
+      "manifest": "plan.json",
+      "profile": null,
+      "conformant": false,
+      "capabilities": [],
+      "runner": "plan",
+      "pending_f4": true,
+      "expected": { "status": "valid", "diagnostics": [] }
+    }
+  ]
+}

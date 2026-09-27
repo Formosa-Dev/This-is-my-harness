@@ -1,0 +1,42 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "skills/example-skill/SKILL.md",
+      "action": "create"
+    }
+  ],
+  "conflicts": [
+    {
+      "path": "config/existing.json",
+      "reason": "A managed file exists and differs from the target; it must not be overwritten silently."
+    }
+  ],
+  "adaptations": [],
+  "unsupportedCapabilities": [],
+  "mcp": [],
+  "hooks": [],
+  "services": [],
+  "environmentVariableNames": [],
+  "risk": {
+    "effectiveClass": "A",
+    "autonomyLevel": 1
+  },
+  "snapshot": {
+    "id": "snap-conflict-0001",
+    "covers": ["skills/example-skill/SKILL.md"]
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm the reported conflict is surfaced and not silently resolved.",
+      "kind": "conflict"
+    }
+  ]
+}
