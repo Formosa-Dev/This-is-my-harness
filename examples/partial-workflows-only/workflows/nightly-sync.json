@@ -1,0 +1,5 @@
+{
+  "$comment": "Fixture content for the nightly sync workflow. Non-normative.",
+  "steps": ["fetch", "sync"],
+  "outcomes": ["synced"]
+}

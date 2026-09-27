@@ -1,0 +1,5 @@
+{
+  "$comment": "Fixture content for the release workflow. Non-normative.",
+  "steps": ["build", "approve", "publish"],
+  "outcomes": ["published", "rejected"]
+}

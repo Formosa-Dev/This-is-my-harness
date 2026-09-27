@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a package that uses only `instructions/` (F3-07).
+# The standard MUST NOT require any other component directory.
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-partial-instructions
+  version: 0.1.0
+  description: A package that uses only the instructions/ directory.
+spec: {}

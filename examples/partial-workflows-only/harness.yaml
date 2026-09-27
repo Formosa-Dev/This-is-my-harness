@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a package that uses only `workflows/` (F3-07).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-partial-workflows
+  version: 0.1.0
+  description: A package that uses only the workflows/ directory.
+spec:
+  components:
+    - type: Workflow
+      name: nightly-sync
+      path: workflows/nightly-sync.json
+      payload:
+        steps:
+          - id: fetch
+          - id: sync
+  permissions:
+    - permission: execution.workflow
+      scope: project
+      riskClass: B
+      autonomyLevel: 2

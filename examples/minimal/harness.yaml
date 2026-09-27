@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: the smallest valid harness (F3-01).
+# A package may remain simple: only the manifest is required, and an empty
+# `spec` yields a harness that is passive by construction.
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-minimal
+  version: 0.1.0
+  description: The smallest valid harness; passive by construction.
+spec: {}

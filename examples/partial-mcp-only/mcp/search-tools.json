@@ -1,0 +1,6 @@
+{
+  "$comment": "Fixture content for an MCP search server. Non-normative.",
+  "transport": "stdio",
+  "capabilities": ["tools.search"],
+  "riskClass": "B"
+}

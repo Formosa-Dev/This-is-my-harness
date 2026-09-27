@@ -1,0 +1,5 @@
+{
+  "$comment": "Fixture content for the local decision model. Non-normative.",
+  "executionLocation": "local",
+  "capabilities": ["models.structured-decision"]
+}

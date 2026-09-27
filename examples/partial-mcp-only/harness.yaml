@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a package that uses only `mcp/` (F3-07).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-partial-mcp
+  version: 0.1.0
+  description: A package that uses only the mcp/ directory.
+spec:
+  components:
+    - type: MCP
+      name: search-tools
+      path: mcp/search-tools.json
+      payload:
+        transport: stdio
+  permissions:
+    - permission: tools.search
+      scope: project
+      riskClass: B
+      autonomyLevel: 2

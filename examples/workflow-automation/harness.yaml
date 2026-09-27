@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a conformant `workflow-automation` profile harness (F3-02).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-workflow-automation
+  version: 0.1.0
+  description: A workflow-automation profile harness with a deterministic flow and a decision model.
+spec:
+  profile: workflow-automation
+  components:
+    - type: Workflow
+      name: release-flow
+      path: workflows/release-flow.json
+      payload:
+        steps:
+          - id: build
+          - id: approve
+          - id: publish
+    - type: Model
+      name: decision-model
+      path: models/decision-model.json
+      payload:
+        executionLocation: local
+  requirements:
+    runtime: runtime.node
+    modelCapabilities:
+      - capability: models.structured-decision
+  permissions:
+    - permission: execution.workflow
+      scope: project
+      riskClass: B
+      autonomyLevel: 2

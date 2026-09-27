@@ -1,0 +1,5 @@
+{
+  "$comment": "Fixture content for the remote generative model. Non-normative.",
+  "executionLocation": "remote",
+  "capabilities": ["models.text-generation", "models.escalation"]
+}

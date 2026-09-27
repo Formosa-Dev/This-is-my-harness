@@ -1,0 +1,4 @@
+{
+  "$comment": "Fixture content for the worker agent. Non-normative.",
+  "capabilities": ["models.structured-decision"]
+}

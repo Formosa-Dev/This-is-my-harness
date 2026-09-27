@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a conformant `web-agent` profile harness (F3-02).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-web-agent
+  version: 0.1.0
+  description: A web-agent profile harness exposing web tools over MCP.
+spec:
+  profile: web-agent
+  components:
+    - type: MCP
+      name: web-tools
+      path: mcp/web-tools.json
+      payload:
+        transport: stdio
+    - type: Model
+      name: local-decision
+      path: models/local-decision.json
+      payload:
+        executionLocation: local
+  requirements:
+    runtime: runtime.node
+    modelCapabilities:
+      - capability: models.structured-decision
+  permissions:
+    - permission: tools.search
+      scope: project
+      riskClass: B
+      autonomyLevel: 2

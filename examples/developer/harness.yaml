@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a conformant `developer` profile harness (F3-02).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: example-developer
+  version: 0.1.0
+  description: A developer-profile harness for reproducible agentic development.
+spec:
+  profile: developer
+  components:
+    - type: Skill
+      name: repo-conventions
+      path: skills/repo-conventions
+    - type: Policy
+      name: no-force-push
+      path: policies/no-force-push.md
+    - type: Model
+      name: decision-model
+      path: models/decision-model.json
+      payload:
+        executionLocation: local
+        capabilities:
+          - models.structured-decision
+  requirements:
+    runtime: runtime.node
+    modelCapabilities:
+      - capability: models.text-generation
