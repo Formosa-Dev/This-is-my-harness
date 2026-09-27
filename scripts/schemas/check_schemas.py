@@ -41,7 +41,20 @@ DIALECT = "https://json-schema.org/draft/2020-12/schema"
 
 REGISTRY_PATH = "schemas/registry.json"
 HARNESS_ROOT = "schemas/harness.v1alpha1.schema.json"
+MODEL_CONTRACT_PATH = "schemas/model-contract.schema.json"
+INSTALL_PLAN_PATH = "schemas/install-plan.schema.json"
 README_PATH = "schemas/README.md"
+
+# Structural cycle/leaf guards (F2-03/F2-04). The composition edges are defined
+# by design.md §2 and enforced here, not by convention:
+#   Guard 1: model-contract MUST NOT `$ref` the component descriptor (the
+#            component -> model-contract edge is one-way; a back-reference would
+#            close the cycle component <-> model-contract).
+#   Guard 2: install-plan `$ref`s leaf `defs/` schemas only and never the manifest
+#            root, because external hosts consume a plan with no manifest in hand.
+HARNESS_ROOT_SUFFIX = "harness.schema.json"
+COMPONENT_DEF_SUFFIX = "defs/component.schema.json"
+DEFS_PREFIX = "defs/"
 
 # Vendor tokens that MUST NOT appear in a schema `const`/`enum` (STYLE.md §5).
 # Match is case-insensitive and word-bounded to avoid false positives.
@@ -306,9 +319,94 @@ def build_edges(docs):
     return edges
 
 
+def collect_refs(data):
+    """Return the list of absolute `$ref` targets (fragments stripped) in a doc."""
+    targets = []
+    for _ptr, node in iter_nodes(data):
+        if isinstance(node, dict) and isinstance(node.get("$ref"), str):
+            target = _strip_fragment(node["$ref"])
+            if target != "":
+                targets.append(target)
+    return targets
+
+
+# --- Cycle / leaf guards (F2-03/F2-04) --------------------------------------
+
+
+def run_guards(root):
+    """Assert the structural guards of design.md §2 plus graph integrity.
+
+    Runs against the real schema tree: the model contract MUST NOT reference the
+    component descriptor, the Install Plan MUST reference leaf ``defs/`` schemas
+    only, and the reference graph MUST be acyclic and fully resolvable.
+    """
+    registry_file = Path(root) / REGISTRY_PATH
+    if not registry_file.exists():
+        print(f"FAIL missing: {REGISTRY_PATH}")
+        return 1
+    registry = json.loads(registry_file.read_text(encoding="utf-8"))
+    base = registry.get("base", BASE_DEFAULT)
+    known_ids = registry.get("ids", {}) or {}
+
+    docs, _roots, _defs = discover_docs(root)
+    by_name = {name: data for name, data in docs}
+    failures = []
+
+    # Guard 1: model-contract MUST NOT `$ref` the component descriptor.
+    model = by_name.get(MODEL_CONTRACT_PATH)
+    if model is None:
+        failures.append(f"FAIL guard: missing {MODEL_CONTRACT_PATH}")
+    else:
+        component_id = base + COMPONENT_DEF_SUFFIX
+        for target in collect_refs(model):
+            if target == component_id:
+                failures.append(
+                    "FAIL guard: model-contract must not $ref the component "
+                    f"descriptor ({component_id})"
+                )
+
+    # Guard 2: install-plan `$ref`s leaf defs only and never the harness root.
+    plan = by_name.get(INSTALL_PLAN_PATH)
+    if plan is None:
+        failures.append(f"FAIL guard: missing {INSTALL_PLAN_PATH}")
+    else:
+        harness_id = base + HARNESS_ROOT_SUFFIX
+        leaf_count = 0
+        for target in collect_refs(plan):
+            if target == harness_id:
+                failures.append(
+                    "FAIL guard: install-plan must not $ref the manifest root "
+                    f"({harness_id})"
+                )
+            elif target.startswith(base + DEFS_PREFIX):
+                leaf_count += 1
+            else:
+                failures.append(
+                    f"FAIL guard: install-plan $ref not a leaf def: {target}"
+                )
+
+    # Guard 3: the reference graph MUST be acyclic.
+    cycles = find_cycles(build_edges(docs))
+    failures += [f"FAIL guard cycle: {cycle}" for cycle in cycles]
+
+    # Guard 4: every `$ref` MUST resolve (registry + disk).
+    unresolved = check_refs(base, known_ids, docs, root)
+    failures += [f"FAIL guard {failure}" for failure in unresolved]
+
+    if failures:
+        for failure in failures:
+            print(failure)
+        return 1
+
+    print(
+        "GUARDS OK "
+        f"model_no_component=1 install_leaf_refs={leaf_count} "
+        f"cycle={len(cycles)} unresolved={len(unresolved)}"
+    )
+    return 0
+
+
 # --- README check ------------------------------------------------------------
-
-
 def readme_sections(root):
     path = Path(root) / README_PATH
     if not path.exists():
@@ -468,6 +566,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="L0 structural pre-check (F2)")
     parser.add_argument("--self-test", action="store_true", help="run adversarial fixtures")
     parser.add_argument("--readme", action="store_true", help="check README sections only")
+    parser.add_argument(
+        "--guards",
+        action="store_true",
+        help="assert the cycle/leaf structural guards (model-contract has no component edge; install-plan refs leaf defs only)",
+    )
     args = parser.parse_args(argv)
 
     root = Path(__file__).resolve().parents[2]
@@ -475,6 +578,8 @@ def main(argv=None):
         return run_self_test()
     if args.readme:
         return run_readme(root)
+    if args.guards:
+        return run_guards(root)
     return run_l0(root)
 
 

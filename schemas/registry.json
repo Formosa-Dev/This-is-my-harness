@@ -3,6 +3,8 @@
   "base": "https://thisismyharness.dev/schemas/v1alpha1/",
   "ids": {
     "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json": "schemas/harness.v1alpha1.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json": "schemas/model-contract.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json": "schemas/install-plan.schema.json",
     "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json": "schemas/defs/identity.schema.json",
     "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json": "schemas/defs/capability.schema.json",
     "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json": "schemas/defs/requirement.schema.json",

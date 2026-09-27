@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+  "title": "Install Plan (v1alpha1)",
+  "description": "Machine-readable shape of the Install Plan (F2-04), the deterministic, serializable intermediate contract produced before any mutation. NON-NORMATIVE machine artifact: the normative source is spec/install-protocol/README.md §4 (the table of fields), §3.9 and §7, plus the spec/core/** documents it cites. The plan enumerates exactly the sixteen fields below; all sixteen are REQUIRED because an incomplete plan MUST NOT proceed to Apply. The plan is bound to the inputs that produced it and is deterministic, so it carries NO timestamp and NO non-deterministic value. The plan is local-machine data and MUST NOT be uploaded or published. This schema references shared leaf definitions only and MUST NOT reference the manifest root, because a plan is consumed by external hosts (CLI, web, desktop, agents) with no manifest in hand. Anchors: install-protocol/README.md §4, §3.9, §7.1-§7.2; core/permissions.md §1, §4; core/risk-classes.md §4.",
+  "type": "object",
+  "required": [
+    "runtime",
+    "runtimeVersion",
+    "project",
+    "scope",
+    "harness",
+    "files",
+    "conflicts",
+    "adaptations",
+    "unsupportedCapabilities",
+    "mcp",
+    "hooks",
+    "services",
+    "environmentVariableNames",
+    "risk",
+    "snapshot",
+    "verificationSteps"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "runtime": {
+      "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/runtime",
+      "description": "The target runtime. F1: install-protocol/README.md §4."
+    },
+    "runtimeVersion": {
+      "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/runtimeVersion",
+      "description": "The resolved runtime version. F1: install-protocol/README.md §4."
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The target project. This is a LOCAL path and MUST NOT be uploaded: the Install Plan is local-machine data. F1: install-protocol/README.md §4; schemas/README.md 'Install Plan is local-only'."
+    },
+    "scope": {
+      "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/scope",
+      "description": "Project scope or user scope; project scope is the default. Scope is recorded here so the reach of the operation is inspectable before Apply. F1: install-protocol/README.md §4; core/permissions.md §1."
+    },
+    "harness": {
+      "type": "object",
+      "required": ["identifier", "version"],
+      "unevaluatedProperties": false,
+      "description": "The canonical identity and the resolved package version of the harness. The version MUST be pinned and MUST NOT be a range. F1: install-protocol/README.md §4; core/versioning.md §4."
+      ,
+      "properties": {
+        "identifier": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/canonicalIdentifier",
+          "description": "The canonical identifier of the harness. F1: core/identity.md §2.2."
+        },
+        "version": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/semver",
+          "description": "The resolved package version, pinned to an immutable digest. F1: core/versioning.md §2, §4."
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "description": "Every managed file the operation will create or modify. Each entry is a closed object, so an unknown field in a file entry MUST be rejected. F1: install-protocol/README.md §4.",
+      "items": {
+        "type": "object",
+        "required": ["path", "action"],
+        "unevaluatedProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Package-relative path of the managed file. Paths MUST NOT traverse outside the project. F1: install-protocol/README.md §4; core/permissions.md §1."
+          },
+          "action": {
+            "type": "string",
+            "enum": ["create", "modify"],
+            "description": "Whether the operation creates or modifies the file. Deleting an unmanaged file is never a plan action. F1: install-protocol/README.md §4, §3.11."
+          },
+          "digest": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/digest",
+            "description": "Optional content digest of the file the operation will write; a digest MUST always resolve to the same bytes. F1: core/distribution.md §4."
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Every conflict detected, with the reason. A conflict MUST NOT be resolved silently; an entry is a closed object. F1: install-protocol/README.md §4, §3.11.",
+      "items": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "unevaluatedProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The path at which the conflict was detected. F1: install-protocol/README.md §4."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why the conflict was detected. A conflict MUST be reported explicitly and MUST NOT be dropped. F1: install-protocol/README.md §4, §3.11."
+          }
+        }
+      }
+    },
+    "adaptations": {
+      "type": "array",
+      "description": "Every translation the adapter will perform, with the declared difference. Compatibility loss MUST always be explicit, never silent. F1: install-protocol/README.md §4; adapter-contract/README.md §6.",
+      "items": {
+        "type": "object",
+        "required": ["capability", "difference"],
+        "properties": {
+          "capability": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId",
+            "description": "The capability the adaptation concerns. F1: adapter-contract/README.md §6.5."
+          },
+          "difference": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The declared difference from the canonical semantics. F1: adapter-contract/README.md §6.5."
+          }
+        }
+      }
+    },
+    "unsupportedCapabilities": {
+      "type": "array",
+      "description": "Every required or provided capability that cannot be honored, and whether it blocks Apply. A required capability that is unsupported MUST block Apply. F1: install-protocol/README.md §4, §3.7; core/compatibility.md §2.",
+      "items": {
+        "type": "object",
+        "required": ["capability", "blocksApply"],
+        "properties": {
+          "capability": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId",
+            "description": "The unsupported capability. F1: core/compatibility.md §2."
+          },
+          "blocksApply": {
+            "type": "boolean",
+            "description": "Whether the unsupported capability blocks Apply. A required capability that is unsupported MUST block Apply and MUST NOT be dropped silently. F1: install-protocol/README.md §3.7 rule 3."
+          }
+        }
+      }
+    },
+    "mcp": {
+      "type": "array",
+      "description": "Every MCP server or tool component involved. A server that can execute arbitrary commands MUST NOT be presented as Passive. F1: install-protocol/README.md §4; package/component-types.md §8.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Component name of the MCP server or tool. F1: install-protocol/README.md §4."
+          },
+          "transport": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Transport the server exposes. F1: package/component-types.md §8.2."
+          },
+          "capabilities": {
+            "type": "array",
+            "description": "Capability contracts the server provides. F1: package/component-types.md §8.2.",
+            "items": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId"
+            }
+          },
+          "riskClass": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/riskClass",
+            "description": "Risk class of the MCP component. F1: package/component-types.md §8.3; core/risk-classes.md §1."
+          }
+        }
+      }
+    },
+    "hooks": {
+      "type": "array",
+      "description": "Every hook or script component that would execute. Hooks and scripts are executable and carry the corresponding risk class; they MUST be enumerated in the plan before any mutation. F1: install-protocol/README.md §4, §3.9; core/permissions.md §2.1."
+      ,
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Package-relative path of the hook or script. F1: install-protocol/README.md §4."
+          },
+          "interpreter": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Interpreter or runner the hook uses, where applicable. F1: install-protocol/README.md §4."
+          },
+          "riskClass": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/riskClass",
+            "description": "Risk class of the hook or script. F1: core/risk-classes.md §1."
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "description": "Every service component and its lifecycle actions. A service MUST declare a lifecycle covering install, start, health-check, stop, update and remove. F1: install-protocol/README.md §4; package/component-types.md §10.1.",
+      "items": {
+        "type": "object",
+        "required": ["name", "lifecycleActions"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Component name of the service. F1: install-protocol/README.md §4."
+          },
+          "lifecycleActions": {
+            "type": "array",
+            "minItems": 6,
+            "uniqueItems": true,
+            "description": "The lifecycle actions the plan will run. All six canonical actions are REQUIRED: with uniqueItems and six enum values, the only valid array of length six contains each action exactly once. F1: package/component-types.md §10.1.",
+            "items": {
+              "type": "string",
+              "enum": ["install", "start", "healthCheck", "stop", "update", "remove"]
+            }
+          },
+          "riskClass": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/riskClass",
+            "description": "Risk class of the service. F1: package/component-types.md §10.4; core/risk-classes.md §1."
+          }
+        }
+      }
+    },
+    "environmentVariableNames": {
+      "type": "array",
+      "description": "The NAMES only of required environment variables. A harness MUST NOT declare their values: an entry carries a name and never a value, so a string containing '=' (a 'KEY=value' pair) is invalid. How secrets are handled declaratively without storing them is OPEN (decision record §58, open question 'secrets handling') and this schema MUST NOT fix it; the field is retained as names-only. F1: core/permissions.md §4; install-protocol/README.md §4.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]*$",
+        "description": "An environment-variable name: uppercase letters, digits and underscores, starting with a letter. A value MUST NOT appear here. F1: core/permissions.md §4.2.",
+        "examples": ["EXAMPLE_API_KEY"]
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": ["effectiveClass", "autonomyLevel"],
+      "unevaluatedProperties": false,
+      "description": "The effective risk class of the operation and the required autonomy level. The risk object is closed. The effective class is the maximum over the components and permissions of the operation, and Apply MUST NOT run below the autonomy floor implied by it. F1: install-protocol/README.md §4, §7.1-§7.2."
+      ,
+      "properties": {
+        "effectiveClass": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/riskClass",
+          "description": "The effective risk class: the maximum class over the parts. F1: install-protocol/README.md §7.2; core/risk-classes.md §4."
+        },
+        "autonomyLevel": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/autonomyLevel",
+          "description": "The required autonomy level; it MUST be at least the floor implied by the effective risk class. F1: install-protocol/README.md §7.1, §7.3."
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["id", "covers"],
+      "unevaluatedProperties": false,
+      "description": "The snapshot that will be taken and the state it covers. The snapshot object is closed. A snapshot MUST cover exactly the managed state the plan will touch and MUST be created before the first mutating operation. F1: install-protocol/README.md §4, §3.10, §5."
+      ,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifier of the snapshot to be taken. F1: install-protocol/README.md §3.10."
+        },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The managed paths the snapshot covers; it MUST cover exactly the state the plan touches. F1: install-protocol/README.md §3.10 rule 2.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "verificationSteps": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The checks that Verify will run after Apply. Verify MUST run these steps and report exactly which passed and which failed. F1: install-protocol/README.md §4, §3.12.",
+      "items": {
+        "type": "object",
+        "required": ["description"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable description of the check. F1: install-protocol/README.md §3.12."
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional category of the check. F1: install-protocol/README.md §3.12."
+          }
+        }
+      }
+    }
+  }
+}

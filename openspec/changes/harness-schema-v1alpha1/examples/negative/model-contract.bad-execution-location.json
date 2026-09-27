@@ -1,0 +1,41 @@
+{
+  "input": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "object"
+      }
+    },
+    "required": ["state"]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "route": {
+        "type": "string"
+      },
+      "confidence": {
+        "type": "number"
+      }
+    },
+    "required": ["route", "confidence"]
+  },
+  "capabilities": ["models.structured-decision"],
+  "resources": {
+    "os": ["linux"],
+    "arch": ["x86_64"],
+    "cpu": {
+      "cores": 1
+    },
+    "ram": "256MiB",
+    "disk": "50MiB"
+  },
+  "executionLocation": "cloud",
+  "fallback": "Abstain when the model is unavailable.",
+  "version": "1.0.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-model:1.0.0"
+  }
+}

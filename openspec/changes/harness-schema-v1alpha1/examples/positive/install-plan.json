@@ -1,0 +1,80 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "skills/example-skill/SKILL.md",
+      "action": "create"
+    },
+    {
+      "path": "models/example-model.json",
+      "action": "modify",
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "conflicts": [
+    {
+      "path": "config/existing.json",
+      "reason": "A managed file exists and differs from the target; it must not be overwritten silently."
+    }
+  ],
+  "adaptations": [
+    {
+      "capability": "models.text-generation",
+      "difference": "Streaming output is not honored; the adapter buffers the full response."
+    }
+  ],
+  "unsupportedCapabilities": [
+    {
+      "capability": "services.vector-store",
+      "blocksApply": false
+    }
+  ],
+  "mcp": [
+    {
+      "name": "example-mcp",
+      "transport": "stdio",
+      "capabilities": ["tools.search"],
+      "riskClass": "B"
+    }
+  ],
+  "hooks": [
+    {
+      "path": "scripts/post-install.sh",
+      "interpreter": "sh",
+      "riskClass": "C"
+    }
+  ],
+  "services": [
+    {
+      "name": "example-local-service",
+      "lifecycleActions": ["install", "start", "healthCheck", "stop", "update", "remove"],
+      "riskClass": "B"
+    }
+  ],
+  "environmentVariableNames": ["EXAMPLE_API_KEY", "EXAMPLE_BASE_URL"],
+  "risk": {
+    "effectiveClass": "C",
+    "autonomyLevel": 3
+  },
+  "snapshot": {
+    "id": "snap-0001",
+    "covers": ["skills/example-skill/SKILL.md", "models/example-model.json"]
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm every file declared in the plan exists after Apply.",
+      "kind": "filesystem"
+    },
+    {
+      "description": "Confirm the modified model file digest matches the planned digest.",
+      "kind": "integrity"
+    }
+  ]
+}

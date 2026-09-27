@@ -8,6 +8,18 @@
     {
       "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
       "file": "examples/positive/manifest.rich.yaml"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/positive/model-contract.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/positive/router.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/positive/install-plan.json"
     }
   ],
   "negative": [
@@ -48,6 +60,38 @@
       "file": "examples/negative/manifest.bad-semver.json",
       "expect": {
         "path": "/metadata/version",
+        "keyword": "pattern"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/negative/model-contract.name-only.json",
+      "expect": {
+        "path": "",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/negative/model-contract.bad-execution-location.json",
+      "expect": {
+        "path": "/executionLocation",
+        "keyword": "enum"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/negative/install-plan.missing-field.json",
+      "expect": {
+        "path": "",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/negative/install-plan.env-value.json",
+      "expect": {
+        "path": "/environmentVariableNames/0",
         "keyword": "pattern"
       }
     }

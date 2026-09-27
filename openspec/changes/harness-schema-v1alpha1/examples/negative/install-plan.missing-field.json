@@ -1,0 +1,32 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "skills/example-skill/SKILL.md",
+      "action": "create"
+    }
+  ],
+  "conflicts": [],
+  "adaptations": [],
+  "unsupportedCapabilities": [],
+  "mcp": [],
+  "hooks": [],
+  "services": [],
+  "environmentVariableNames": ["EXAMPLE_API_KEY"],
+  "risk": {
+    "effectiveClass": "A",
+    "autonomyLevel": 1
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm every file declared in the plan exists after Apply."
+    }
+  ]
+}

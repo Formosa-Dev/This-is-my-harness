@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+  "title": "Model and Router contract (v1alpha1)",
+  "description": "Machine-readable contract of a Model component and its Router specialization (F2-03). NON-NORMATIVE machine artifact: the normative source is spec/package/component-types.md §4-§5 and the spec/core/** documents it cites. A Model MUST be more than a name: it declares an input contract, an output contract, the capability contracts it satisfies, a resource contract (the shared hardware definition), an execution location, a service lifecycle when it runs as a service, a fallback, a version, a license and an artifact source. This contract MUST NOT reference the component descriptor: the model reuses the shared leaf definitions, so the composition edge component -> model-contract is one-way and the graph stays acyclic. Anchors: component-types.md §4.1-§4.9, §5.1-§5.4; core/requirements.md §2.4; core/distribution.md §3-§7.",
+  "type": "object",
+  "required": [
+    "input",
+    "output",
+    "capabilities",
+    "resources",
+    "executionLocation",
+    "fallback",
+    "version",
+    "artifactSource"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "input": {
+      "type": "object",
+      "description": "Input contract of the model, expressed as an embedded JSON Schema. Whether this is an object, a string or a typed form is entirely OPEN (decision record §58, open question 'exact model-capability contract'): the internals are permissive and this schema MUST NOT fix a DSL or a capability grammar. The semantics that ARE fixed: the contract MUST describe the shape and the semantics of the model's input. F1: component-types.md §4.1."
+    },
+    "output": {
+      "type": "object",
+      "description": "Output contract of the model, expressed as an embedded JSON Schema, including typed outcomes where applicable. The internals are OPEN (decision record §58, open question 'exact model-capability contract') and MUST NOT be fixed at v1alpha1. The semantics that ARE fixed: the contract MUST describe the shape and the semantics of the model's output, including any typed outcomes. F1: component-types.md §4.2."
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The capability contracts this model satisfies, each expressed as a namespaced capability contract identifier, never as a hardcoded brand. A concrete implementation MAY be named only as a preferred or alternative implementation of a capability elsewhere and MUST NOT be required for conformance here. F1: component-types.md §4.1, §4.3.",
+      "items": {
+        "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId"
+      }
+    },
+    "resources": {
+      "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/hardware",
+      "description": "Resource contract of the model, reusing the single shared hardware definition (os, arch, cpu, ram, gpu, vram, disk) so the resource shape is never re-declared. F1: component-types.md §4.4; core/requirements.md §2.4."
+    },
+    "executionLocation": {
+      "type": "string",
+      "enum": ["local", "remote"],
+      "description": "Whether the model executes on the local machine or on a remote provider. Exactly two locations are recognized; a local model MUST NOT be presented as remote and vice versa. F1: component-types.md §4.5."
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["install", "start", "healthCheck", "stop", "update", "remove"],
+      "unevaluatedProperties": false,
+      "description": "Service lifecycle of the model. The object is OPTIONAL overall: a model that does not run as a service declares none. When the model IS service-backed a lifecycle MUST be present, and all six actions (install, start, healthCheck, stop, update and remove) are REQUIRED, so the declaration always covers the full lifecycle. Each value is a human-readable descriptor of the action, not an executable command: executing a lifecycle action is owned by the Install Plan and Apply phases, which carry the corresponding risk class. F1: component-types.md §4.6, §10.1."
+      ,
+      "properties": {
+        "install": {
+          "type": "string",
+          "description": "How the service is installed or bootstrapped. F1: component-types.md §10.1."
+        },
+        "start": {
+          "type": "string",
+          "description": "How the service is started. F1: component-types.md §10.1."
+        },
+        "healthCheck": {
+          "type": "string",
+          "description": "How the service health is checked. F1: component-types.md §10.1."
+        },
+        "stop": {
+          "type": "string",
+          "description": "How the service is stopped. F1: component-types.md §10.1."
+        },
+        "update": {
+          "type": "string",
+          "description": "How the service is updated. F1: component-types.md §10.1."
+        },
+        "remove": {
+          "type": "string",
+          "description": "How the service is removed. F1: component-types.md §10.1."
+        }
+      }
+    },
+    "fallback": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What happens when the model or its host is unavailable, including which decisions escalate to another capability. Fallback MUST be explicit; it MUST NOT be silent. F1: component-types.md §4.7."
+    },
+    "version": {
+      "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/semver",
+      "description": "Version of the model contract. MUST be valid Semantic Versioning 2.0.0. F1: component-types.md §4.8; core/versioning.md §2."
+    },
+    "license": {
+      "type": "string",
+      "description": "License of the model, an SPDX identifier where one exists. Whether a model license duplicates the package license declared once in the manifest metadata.license is OPEN (decision record §58, open question 'model license vs the single-declaration rule') and this schema MUST NOT decide that policy; the field is retained and left optional. F1: component-types.md §4.8; core/distribution.md §7."
+    },
+    "artifactSource": {
+      "type": "object",
+      "required": ["provider", "digest", "reference"],
+      "unevaluatedProperties": false,
+      "description": "Where the model artifact or provider is obtained. A concrete provider MUST NOT be fixed at v1alpha1: the provider is a free-form value and no vendor is hardcoded into the Core. F1: component-types.md §4.9; core/distribution.md §2, §4."
+      ,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Provider or source of the artifact. Deliberately NOT an enum and NOT a const: no provider is fixed, so the Core does not lock in a vendor. F1: component-types.md §4.9."
+        },
+        "digest": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/digest",
+          "description": "Content digest of the model artifact, in the OCI form. A digest MUST always resolve to the same bytes. F1: core/distribution.md §4."
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Distribution reference of the artifact or provider. The reference MUST resolve to exactly one digest before Apply; the exact repository layout is deployment-specific. F1: core/distribution.md §2."
+        }
+      }
+    },
+    "router": {
+      "$ref": "#/$defs/router",
+      "description": "Optional Router specialization block. When present, the document is a Router: a Model specialization that routes, scores, gates or selects. F1: component-types.md §5."
+    }
+  },
+  "$defs": {
+    "router": {
+      "type": "object",
+      "required": ["outputs", "thresholds", "fallback"],
+      "unevaluatedProperties": false,
+      "description": "Router-specific declaration. A Router MUST declare typed outputs and its thresholds and fallback behavior, including which decisions escalate to a generative capability, and MUST satisfy the Model declaration requirements in this same schema. A separate router schema is deliberately rejected so the Model and Router contracts stay in one place. F1: component-types.md §5.1-§5.4."
+      ,
+      "properties": {
+        "outputs": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Typed outcomes the router can emit, for example a selected route, a score, or an abstention/no-op outcome. Typed outcomes are REQUIRED. F1: component-types.md §5.1.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "description": "The thresholds the router applies. The concrete threshold grammar is OPEN (decision record §58, open question 'policy language / workflow graph'): this position is permissive and MUST NOT fix a threshold DSL. The semantics that ARE fixed: thresholds MUST be declared and MUST be inspectable. F1: component-types.md §5.2."
+        },
+        "fallback": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Router fallback behavior, including which decisions escalate to a generative capability. REQUIRED and MUST NOT be silent. F1: component-types.md §5.2."
+        },
+        "escalation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional description of the escalation path from a router decision to a generative capability. F1: component-types.md §5.2."
+        }
+      }
+    }
+  }
+}
