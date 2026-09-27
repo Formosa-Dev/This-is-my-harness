@@ -1,0 +1,52 @@
+# This is my Harness — root Cargo workspace (F2-05..F2-12).
+#
+# The JSON Schema set in `schemas/` is the single, language-neutral source of
+# truth (ADR-0001 / ADR-0002). This workspace only READS it; it never redefines
+# the standard. `Cargo.lock` is committed on purpose: the workspace ships
+# binaries, so builds must be reproducible.
+
+[workspace]
+members = ["packages/*"]
+# `packages/sdk` is reserved and intentionally holds no Rust crate yet
+# (design §1: ".gitkeep only"). Cargo would otherwise fail to load a manifest
+# that does not exist, so the glob keeps the layout and `exclude` keeps sdk out.
+exclude = ["packages/sdk"]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.85"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+# Schema engine: offline by construction (`default-features = false` drops the
+# `resolve-http` / `resolve-file` resolvers). Exact pin: R3 spike validated
+# 0.58.1 against the actual corpus (7/7 valid, 16/16 rejected, 0 mismatch).
+jsonschema = { version = "=0.58.1", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# `default-features = false` drops clap's `color` feature. That feature is the
+# only thing that pulls `anstream` -> `anstyle-wincon` / `anstyle-query` ->
+# `windows-sys 0.61` -> `windows-link`, i.e. a THIRD `raw-dylib` edge that fails
+# on windows-gnu without `as` (the R3 spike did not see it: it used no `clap`).
+# The parsing/help features we actually need are re-enabled explicitly. No color
+# also keeps CLI output deterministic.
+clap = { version = "4", default-features = false, features = ["std", "derive", "help", "usage", "error-context", "suggestions"] }
+assert_cmd = "2"
+
+# --- windows-gnu stopgap pins (Q13) ---------------------------------------
+# The installed `stable-x86_64-pc-windows-gnu` toolchain ships `dlltool`/`ld`
+# but NO GNU assembler (`as`). Crates that emit a `raw-dylib` import library
+# therefore fail at build time (`error calling dlltool ... program not found`).
+# Two transitive edges hit that path through `jsonschema`:
+#   ahash 0.8.12+        -> getrandom 0.3 -> windows-link          (raw-dylib)
+#   parking_lot_core 0.9.12+ -> windows-targets 0.53 -> windows-link (raw-dylib)
+# Pinning the three crates below removes both edges. These are an exact-version
+# STOPGAP, not the fix: the environment must gain a GNU `as` (MinGW-w64
+# binutils) or switch to MSVC before F4 pulls `tokio`. Tracking: Q13. §58 is
+# unaffected by this pin.
+ahash = "=0.8.11"
+parking_lot = "=0.12.4"
+parking_lot_core = "=0.9.11"

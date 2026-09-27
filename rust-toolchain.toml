@@ -1,0 +1,20 @@
+# Pinned toolchain for the harness Rust workspace (F2-05..F2-12).
+#
+# `stable` resolves to the host installer channel. On this machine that is
+# `stable-x86_64-pc-windows-gnu` (cargo/rustc 1.98.1) — the toolchain the R3
+# spike was executed and recorded against.
+#
+# PREREQUISITE (Q13 — an environment gap, not a code defect; must be fixed
+# before F4):
+#   The installed windows-gnu toolchain ships `dlltool` and `ld` but NO GNU
+#   assembler (`as`). `dlltool` shells out to `as` to build import libraries,
+#   so any crate that needs a `raw-dylib` import library fails with
+#   `error: error calling dlltool 'dlltool.exe': program not found`.
+#   The workspace currently works around this with exact transitive pins
+#   (`ahash`, `parking_lot`, `parking_lot_core` — see the root `Cargo.toml`).
+#   That is a STOPGAP: before F4 pulls `tokio`, install MinGW-w64 binutils so
+#   `as` is on PATH, or switch to `stable-x86_64-pc-windows-msvc`.
+
+[toolchain]
+channel = "stable"
+profile = "minimal"

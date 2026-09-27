@@ -1,0 +1,10 @@
+[package]
+name = "harness-core"
+description = "Harness Core — reference resolution, planning, snapshot/apply/verify/revert, path-safety and hashing (F4+). Placeholder for F2."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
