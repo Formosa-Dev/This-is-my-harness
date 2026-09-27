@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/component.schema.json",
+  "title": "Component descriptor definitions",
+  "description": "Shared component definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/package/component-types.md and spec/package/layout.md. A component is a typed, addressable element; a file is not a component merely because it exists.",
+  "$defs": {
+    "componentDescriptor": {
+      "type": "object",
+      "required": ["type"],
+      "unevaluatedProperties": false,
+      "description": "Base component descriptor. A component MUST declare its type; a component whose type cannot be determined MUST cause rejection. F1: package/component-types.md §2; package/layout.md §3.7.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Skill", "Model", "Router", "Policy", "Agent", "MCP", "Workflow", "Service"],
+          "description": "The recognized component type. Exactly eight are recognized at v1alpha1, and the list is exhaustive: a new type MUST be admitted through the extension process. There is NO 'Tool' component type: entries under tools/ are composed through the adopted tool-interop standard and are not a competing component type. F1: package/component-types.md §2; package/layout.md §4.1."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+          "description": "Component name (slug grammar). F1: package/layout.md §2; core/identity.md §2."
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Package-relative path of the component content. Component paths MUST be relative to the package root and MUST NOT contain '..' or otherwise escape it. F1: package/layout.md §2.1."
+        },
+        "payload": {
+          "type": "object",
+          "description": "Type-specific descriptor payload for the component. The Policy language and the workflow graph are OPEN (decision record §58, open question 'policy language / workflow graph'): a component is a descriptor, not a DSL, so this position is permissive and MUST NOT fix a policy language, execute code or define a workflow schema. F1: package/component-types.md §6.4, §9.3."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json",
+  "title": "Identity and naming definitions",
+  "description": "Shared identity definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/core/identity.md and spec/core/versioning.md. Anchors: identity.md §2, §2.1-§2.2, §8; versioning.md §2, §4; manifest/README.md §3.",
+  "$defs": {
+    "slugName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+      "description": "Harness slug within an owner namespace: 1-64 characters, lowercase ASCII, digits and interior hyphens only, and it MUST NOT contain '/'. F1: core/identity.md §2; manifest/README.md §3.2."
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$",
+      "description": "Owner namespace authority: 1-40 characters, lowercase ASCII, digits and interior hyphens only. An owner is a namespace, not a user account. F1: core/identity.md §2, §5."
+    },
+    "scopedReference": {
+      "type": "string",
+      "pattern": "^@[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+      "description": "Scoped reference '@owner/slug'. It resolves against the same host as the manifest that contains it. F1: core/identity.md §2.1, §5.3."
+    },
+    "canonicalIdentifier": {
+      "type": "string",
+      "pattern": "^https://[a-z0-9.-]+/h/[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:@[^/]+)?$",
+      "description": "Canonical identifier 'https://<host>/h/<owner>/<slug>[@<version>]'. The scheme MUST be https. The host is a VARIABLE and the definitive canonical host and namespace are OPEN (decision record §58, open question 'canonical host / namespace'); this schema MUST NOT fix a host. F1: core/identity.md §2.2, §8."
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic Versioning 2.0.0: MAJOR.MINOR.PATCH with optional pre-release and build metadata. F1: core/versioning.md §2."
+    },
+    "versionRange": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Compatibility or version range. The precise surface syntax of version ranges is OPEN (decision record §58, open question 'dependencies and composition'); this schema MUST NOT fix a range grammar. The resolution semantics that ARE fixed are the inclusive lower bound, the upper bound and the ordering over stability stages. F1: core/versioning.md §4; core/dependencies.md §8."
+    }
+  }
+}

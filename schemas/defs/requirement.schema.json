@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json",
+  "title": "Environment requirement definitions",
+  "description": "Shared requirement definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/core/requirements.md and spec/core/versioning.md. Every requirement is a definite predicate evaluated against the target environment before any mutation.",
+  "$defs": {
+    "runtime": {
+      "type": "string",
+      "pattern": "^runtime\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$",
+      "description": "Primary runtime capability identifier of the form 'runtime.<runtime-id>'. A Full Harness declares exactly one primary runtime requirement; a Component MUST NOT declare one, so this field is optional at the manifest level. F1: core/requirements.md §2.1."
+    },
+    "runtimeVersion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Range of runtime versions the harness supports. The range semantics are normative and fixed (inclusive lower bound, upper bound, ordering over stability stages); the range surface syntax is deliberately not fixed in the prose spec. F1: core/requirements.md §2.2; core/versioning.md §4."
+    },
+    "modelCapabilities": {
+      "type": "array",
+      "description": "Capability contracts the harness needs (for example a generative, structured-decision or embedding capability). Each entry is a capability contract; a concrete implementation MUST NOT be required for conformance. F1: core/requirements.md §2.3.",
+      "items": {
+        "type": "object",
+        "required": ["capability"],
+        "unevaluatedProperties": false,
+        "properties": {
+          "capability": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+            "description": "The required model capability contract. F1: core/requirements.md §2.3."
+          },
+          "preferred": {
+            "type": "string",
+            "description": "Optional preferred implementation of the capability contract. F1: core/requirements.md §2.3."
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional alternative implementations satisfying the same contract. F1: core/requirements.md §2.3."
+          }
+        }
+      }
+    },
+    "hardware": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "description": "Closed hardware requirement object with exactly the seven fields os, arch, cpu, ram, gpu, vram and disk. Hardware MUST be expressed as thresholds and capability predicates, never as vendor or product names; a declared field the resolver does not understand MUST cause rejection. F1: core/requirements.md §2.4.",
+      "properties": {
+        "os": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Set of operating-system families on which the harness can run. F1: core/requirements.md §2.4."
+        },
+        "arch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Set of CPU architectures on which the harness can run. F1: core/requirements.md §2.4."
+        },
+        "cpu": {
+          "type": "object",
+          "unevaluatedProperties": false,
+          "description": "Minimum logical core count and required CPU feature predicates. F1: core/requirements.md §2.4.",
+          "properties": {
+            "cores": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Minimum logical core count (inclusive). F1: core/requirements.md §2.4."
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Required CPU feature predicates, expressed without vendor names. F1: core/requirements.md §2.4."
+            }
+          }
+        },
+        "ram": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Minimum available memory (inclusive threshold). F1: core/requirements.md §2.4."
+        },
+        "gpu": {
+          "type": "object",
+          "unevaluatedProperties": false,
+          "description": "Whether a GPU is required and any capability predicates it must satisfy. A GPU requirement MUST NOT name a vendor or product; it states a capability. F1: core/requirements.md §2.4 rule 1.",
+          "properties": {
+            "required": {
+              "type": "boolean",
+              "description": "Whether a GPU is required. F1: core/requirements.md §2.4."
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Required GPU capability predicates, expressed without vendor names. F1: core/requirements.md §2.4."
+            }
+          }
+        },
+        "vram": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Minimum available GPU memory (inclusive threshold). F1: core/requirements.md §2.4."
+        },
+        "disk": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Minimum free disk space for the download and installation footprint. F1: core/requirements.md §2.4."
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "description": "Services the harness requires, expressed as service capability contracts. A required service MUST be resolvable to a declarable Service component or to an already-available equivalent. F1: core/requirements.md §2.5.",
+      "items": {
+        "type": "object",
+        "required": ["capability"],
+        "unevaluatedProperties": false,
+        "properties": {
+          "capability": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+            "description": "The required service capability contract. F1: core/requirements.md §2.5."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the service is required (hard) or preferred (soft). An unmet required requirement blocks Apply. F1: core/requirements.md §3."
+          },
+          "preferred": {
+            "type": "string",
+            "description": "Optional preferred implementation. F1: core/requirements.md §2.5."
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional alternative implementations. F1: core/requirements.md §2.5."
+          }
+        }
+      }
+    },
+    "backends": {
+      "type": "array",
+      "description": "Execution backends the harness requires, expressed as capability contracts. A backend requirement MUST be expressible independently of a concrete vendor implementation. F1: core/requirements.md §2.6.",
+      "items": {
+        "type": "object",
+        "required": ["capability"],
+        "unevaluatedProperties": false,
+        "properties": {
+          "capability": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+            "description": "The required backend capability contract. F1: core/requirements.md §2.6."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the backend is required (hard) or preferred (soft). F1: core/requirements.md §3."
+          },
+          "preferred": {
+            "type": "string",
+            "description": "Optional preferred implementation. F1: core/requirements.md §2.6."
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional alternative implementations. F1: core/requirements.md §2.6."
+          }
+        }
+      }
+    }
+  }
+}

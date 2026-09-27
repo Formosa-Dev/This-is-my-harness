@@ -1,5 +1,13 @@
 {
-  "$comment": "Offline $id -> repo path resolver map for the harness schema set (F2-02). 'base' is the schema-identity namespace; it is NOT the §58-open harness-resolution host (see schemas/README.md). Populated as each schema lands.",
+  "$comment": "Offline $id -> repo path resolver map for the harness schema set (F2-02). 'base' is the schema-identity namespace; it is NOT the §58-open harness-resolution host (see schemas/README.md). Every schema and shared definition registers exactly one $id here.",
   "base": "https://thisismyharness.dev/schemas/v1alpha1/",
-  "ids": {}
+  "ids": {
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json": "schemas/defs/identity.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json": "schemas/defs/capability.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json": "schemas/defs/requirement.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json": "schemas/defs/permission.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/component.schema.json": "schemas/defs/component.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/dependency.schema.json": "schemas/defs/dependency.schema.json",
+    "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json": "schemas/defs/distribution.schema.json"
+  }
 }

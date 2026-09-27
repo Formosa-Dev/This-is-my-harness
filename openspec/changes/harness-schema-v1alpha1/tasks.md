@@ -41,12 +41,12 @@ Alternative chain: `feature-branch-chain` with a `harness-schema-v1alpha1` track
 
 ## Phase 2 — F2 `schemas`: shared `$defs` (PR 2)
 
-- [ ] 2.1 `schemas/defs/identity.schema.json` (slugName 1–64 no `/`, owner, scopedReference, canonicalIdentifier **host-variable OPEN**, semver, versionRange) + `schemas/defs/capability.schema.json` (capabilityId pattern, capabilityRequirement `{capability, preferred?, alternatives?}`). Deps: 1.3. **Verify:** L0 → `OK ... defs=2`.
-- [ ] 2.2 `schemas/defs/requirement.schema.json` (runtime, runtimeVersion, modelCapabilities, `hardware` closed 7 fields, services, backends) + `schemas/defs/permission.schema.json` (permission, scope, riskClass A–D, autonomyLevel 0–3). Deps: 2.1. **Verify:** L0 → `OK ... defs=4`.
-- [ ] 2.3 `schemas/defs/component.schema.json` (componentDescriptor + 8-type discriminator; **no `Tool` type**) + `schemas/defs/dependency.schema.json` (dependencyReference, override; ordered constraint noted). Deps: 2.1. **Verify:** L0 → `OK ... defs=6`.
-- [ ] 2.4 `schemas/defs/distribution.schema.json` (digest, `artifactType` **pattern OPEN**, provenance, compatibilityLevel enum `native/adapted/partial/untested/unsupported`, trustLabel). Deps: 2.1. **Verify:** L0 → `OK ... defs=7 open=6`.
-- [ ] 2.5 Populate `schemas/registry.json` with every `$id`→repo path (7 defs). Deps: 2.1–2.4. **Verify:** L0 → `OK schemas=0 defs=7 refs=0 open=6 vendor=0 unresolved=0 cycle=0`.
-- [ ] 2.6 **Adversarial (pairs 2.1–2.5):** inject a vendor `const`, a duplicate definition, a forced component↔model cycle stub, and a broken `$ref`; assert each is reported. Deps: 2.5. **Verify:** each injection → exit 1 with the matching `FAIL vendor|duplicate|cycle|unresolved`; clean tree → exit 0.
+- [x] 2.1 `schemas/defs/identity.schema.json` (slugName 1–64 no `/`, owner, scopedReference, canonicalIdentifier **host-variable OPEN**, semver, versionRange) + `schemas/defs/capability.schema.json` (capabilityId pattern, capabilityRequirement `{capability, preferred?, alternatives?}`). Deps: 1.3. **Verify:** L0 → `OK ... defs=2`. @2026-09-26
+- [x] 2.2 `schemas/defs/requirement.schema.json` (runtime, runtimeVersion, modelCapabilities, `hardware` closed 7 fields, services, backends) + `schemas/defs/permission.schema.json` (permission, scope, riskClass A–D, autonomyLevel 0–3). Deps: 2.1. **Verify:** L0 → `OK ... defs=4`. @2026-09-26
+- [x] 2.3 `schemas/defs/component.schema.json` (componentDescriptor + 8-type discriminator; **no `Tool` type**) + `schemas/defs/dependency.schema.json` (dependencyReference, override; ordered constraint noted). Deps: 2.1. **Verify:** L0 → `OK ... defs=6`. @2026-09-26
+- [x] 2.4 `schemas/defs/distribution.schema.json` (digest, `artifactType` **pattern OPEN**, provenance, compatibilityLevel enum `native/adapted/partial/untested/unsupported`, trustLabel). Deps: 2.1. **Verify:** L0 → `OK ... defs=7 open=6`. @2026-09-26
+- [x] 2.5 Populate `schemas/registry.json` with every `$id`→repo path (7 defs). Deps: 2.1–2.4. **Verify:** L0 → `OK schemas=0 defs=7 refs=0 open=6 vendor=0 unresolved=0 cycle=0`. @2026-09-26
+- [x] 2.6 **Adversarial (pairs 2.1–2.5):** inject a vendor `const`, a duplicate definition, a forced component↔model cycle stub, and a broken `$ref`; assert each is reported. Deps: 2.5. **Verify:** each injection → exit 1 with the matching `FAIL vendor|duplicate|cycle|unresolved`; clean tree → exit 0. @2026-09-26
 
 ## Phase 3 — F2-01: manifest root schema (PR 3)
 

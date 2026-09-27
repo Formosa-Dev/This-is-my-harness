@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json",
+  "title": "Distribution metadata definitions",
+  "description": "Shared distribution definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/core/distribution.md and spec/core/compatibility.md. Artifacts are content-addressed; digests are immutable.",
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Content digest over the exact artifact bytes, in the OCI form 'sha256:<hex>'. A digest MUST always resolve to the same bytes; immutability by digest is a Core invariant. F1: core/distribution.md §4."
+    },
+    "artifactType": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$",
+      "description": "Artifact type that distinguishes a harness artifact from a container image or an unrelated artifact. The definitive OCI media type is OPEN (decision record §58, open question 'definitive OCI media type') and MUST NOT be fixed at v1alpha1; this position is a pattern, never a media-type const, and any placeholder string is NON-NORMATIVE. Semantics that ARE fixed: the artifact type MUST be stable per artifact kind and MUST be registered before release. F1: core/distribution.md §3."
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Source repository and build provenance. Provenance MUST NOT substitute for signature verification: a stated source is a claim, not evidence. F1: core/distribution.md §6.",
+      "properties": {
+        "sourceRepository": {
+          "type": "string",
+          "description": "Source repository of the artifact. F1: core/distribution.md §6."
+        },
+        "attestation": {
+          "type": "string",
+          "description": "Attestation describing how the artifact was built; it SHOULD be published as an attestation referrer so it is verifiable from the digest. F1: core/distribution.md §6.3."
+        }
+      }
+    },
+    "compatibilityLevel": {
+      "type": "string",
+      "enum": ["native", "adapted", "partial", "untested", "unsupported"],
+      "description": "Compatibility level of a (capability, target) pair for a specific artifact version. 'untested' MUST NOT be presented as supported; a required capability that is 'unsupported' MUST block Apply. F1: core/compatibility.md §2."
+    },
+    "trustLabel": {
+      "type": "array",
+      "description": "Precise report of exactly which integrity, provenance and identity checks passed. A trust label MUST NOT imply more assurance than was established and MUST NOT assert absolute safety. F1: glossary.md 'Trust label'; core/distribution.md §5.4.",
+      "items": {
+        "type": "string",
+        "enum": ["manifest valid", "hash verified", "signature verified", "author identity verified", "maintainer reviewed", "runtime tested"]
+      }
+    }
+  }
+}

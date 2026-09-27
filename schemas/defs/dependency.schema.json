@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/dependency.schema.json",
+  "title": "Dependency and composition definitions",
+  "description": "Shared dependency definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/core/dependencies.md. `extends` is an ordered list whose order is significant for precedence and MUST be preserved by the resolver.",
+  "$defs": {
+    "dependencyReference": {
+      "type": "object",
+      "required": ["reference"],
+      "unevaluatedProperties": false,
+      "description": "One entry of the ordered `extends` array. `extends` order is significant: an explicit declaration in the extending artifact outranks a dependency named earlier, which outranks a dependency named later. F1: core/dependencies.md §2, §4.",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?:@[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:@[^/]+)?|https://[a-z0-9.-]+/h/[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?(?:@[^/]+)?)$",
+          "description": "Dependency reference: a scoped reference '@owner/slug[@version]' or a canonical identifier 'https://<host>/h/<owner>/<slug>[@<version>]'. A short reference 'owner/slug' MUST NOT be used inside a published manifest because it carries no host. An unpinned reference MUST be resolved to an immutable digest before Apply. F1: core/dependencies.md §1."
+        },
+        "override": {
+          "type": "object",
+          "description": "Optional explicit override of a dependency declaration. The precise surface syntax of override declarations is OPEN (decision record §58, open question 'dependencies and composition'); this position is permissive. An override MUST be explicit in the extending artifact, MUST be visible in the Install Plan, and MUST NOT reduce a risk class, broaden a scope without approval or bypass a security constraint. F1: core/dependencies.md §6, §8."
+        }
+      }
+    }
+  }
+}

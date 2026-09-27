@@ -8,15 +8,18 @@ make about itself:
 1. every schema parses as JSON and declares the Draft 2020-12 dialect;
 2. every ``$ref`` targets an ``$id`` declared in ``schemas/registry.json`` AND a
    file that exists on disk (offline resolver integrity);
-3. no vendor token appears in any schema ``const``/``enum`` (STYLE.md §5);
-4. every §58-sensitive position carries an explicit OPEN marker;
-5. the reference graph contains no cycle;
-6. ``schemas/README.md`` documents the required strategy sections.
+3. no two schema documents declare the same ``$id`` and no two ``$id``s map to
+   the same repo path (duplicate definition);
+4. every registry entry maps to a file that exists on disk;
+5. no vendor token appears in any schema ``const``/``enum`` (STYLE.md §5);
+6. every §58-sensitive position carries an explicit OPEN marker;
+7. the reference graph contains no cycle;
+8. ``schemas/README.md`` documents the required strategy sections.
 
 Modes::
 
     python scripts/schemas/check_schemas.py            # full L0 check
-    python scripts/schemas/check_schemas.py --self-test # 4 adversarial fixtures
+    python scripts/schemas/check_schemas.py --self-test # 5 adversarial fixtures
     python scripts/schemas/check_schemas.py --readme    # README sections only
 
 Exit code is 0 on success and 1 on any failure.
@@ -56,8 +59,19 @@ VENDOR_TOKENS = (
 )
 
 # §58-sensitive property names: the property subschema MUST carry an OPEN marker
-# naming §58 (no fixed media type, no fixed canonical host).
-OPEN_SENSITIVE_KEYS = frozenset({"artifactType", "canonicalIdentifier"})
+# naming §58 (no fixed media type, no fixed canonical host, no fixed range
+# grammar, no fixed capability registry, no fixed policy/workflow payload, no
+# fixed override syntax). One occurrence per concept; no nested re-declaration.
+OPEN_SENSITIVE_KEYS = frozenset(
+    {
+        "artifactType",
+        "canonicalIdentifier",
+        "versionRange",
+        "capabilityId",
+        "payload",
+        "override",
+    }
+)
 
 # File-scoped OPEN rules: (schema filename suffix, sensitive property names).
 OPEN_FILE_RULES = (
@@ -165,6 +179,40 @@ def check_refs(base, known_ids, docs, root):
             if (Path(root) / target).exists():
                 continue
             failures.append(f"FAIL unresolved: {name} #{ptr} -> {ref}")
+    return failures
+
+
+def check_duplicates(docs, known_ids=None):
+    """No two schema documents MAY declare the same `$id`; paths MUST be unique."""
+    failures = []
+    seen_ids = {}
+    for name, data in docs:
+        sid = data.get("$id")
+        if isinstance(sid, str):
+            if sid in seen_ids and seen_ids[sid] != name:
+                failures.append(
+                    f"FAIL duplicate: $id {sid!r} declared by {seen_ids[sid]} and {name}"
+                )
+            else:
+                seen_ids[sid] = name
+    path_to_id = {}
+    for sid, path in (known_ids or {}).items():
+        if path in path_to_id and path_to_id[path] != sid:
+            failures.append(
+                f"FAIL duplicate: path {path!r} registered by "
+                f"{path_to_id[path]!r} and {sid!r}"
+            )
+        else:
+            path_to_id[path] = sid
+    return failures
+
+
+def check_registry_paths(known_ids, root):
+    """Every registered `$id` MUST map to a file that exists on disk."""
+    failures = []
+    for sid, path in (known_ids or {}).items():
+        if not (Path(root) / path).exists():
+            failures.append(f"FAIL registry: {sid} -> missing file {path}")
     return failures
 
 
@@ -327,6 +375,8 @@ def run_l0(root):
     failures = []
     failures += check_dialect(docs)
     failures += check_refs(base, known_ids, docs, root)
+    failures += check_duplicates(docs, known_ids)
+    failures += check_registry_paths(known_ids, root)
     failures += scan_vendor(docs)
     failures += check_open(docs)
     cycles = find_cycles(build_edges(docs))
@@ -389,6 +439,18 @@ def run_self_test():
         (
             "forced-cycle",
             bool(find_cycles({"a": ["b"], "b": ["a"]})),
+        ),
+        (
+            "duplicate-definition",
+            bool(
+                check_duplicates(
+                    [
+                        ("a.schema.json", {"$id": BASE_DEFAULT + "defs/x.schema.json"}),
+                        ("b.schema.json", {"$id": BASE_DEFAULT + "defs/x.schema.json"}),
+                    ],
+                    {},
+                )
+            ),
         ),
     ]
     failed = [name for name, detected in cases if not detected]

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json",
+  "title": "Capability definitions",
+  "description": "Shared capability definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/glossary.md, spec/core/permissions.md and spec/core/core-vs-extension.md. A capability is a named, versioned unit of functionality expressed as a contract independent of any concrete vendor implementation.",
+  "$defs": {
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+      "description": "Namespaced capability contract identifier, for example 'models.system-one', 'interfaces.mcp' or 'workflows.arazzo'. Which capabilities exist in the Core versus an extension is OPEN (decision record §58, open question 'core-vs-extension capabilities'): this schema validates shape only and MUST NOT fix the capability registry contents; existence is F2-07. F1: glossary.md 'Capability'; core/core-vs-extension.md §3."
+    },
+    "capabilityRequirement": {
+      "type": "object",
+      "required": ["capability"],
+      "unevaluatedProperties": false,
+      "description": "A required capability contract, optionally naming a preferred implementation and alternatives. A concrete implementation MUST NOT be required for conformance. F1: core/requirements.md §2.3, §3.",
+      "properties": {
+        "capability": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+          "description": "The required capability contract. Same identifier shape as capabilityId. F1: core/requirements.md §2.3."
+        },
+        "preferred": {
+          "type": "string",
+          "description": "Optional preferred implementation of the capability contract. A concrete implementation MAY be named only as preferred or alternative and MUST NOT be required for conformance. F1: core/requirements.md §2.3."
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional alternative implementations, each of which MUST satisfy the same capability contract. F1: core/requirements.md §2.3."
+        }
+      }
+    }
+  }
+}

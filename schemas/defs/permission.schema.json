@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json",
+  "title": "Permission definitions",
+  "description": "Shared permission definitions (F2-02, schema-strategy). NON-NORMATIVE machine artifact: the normative source is spec/core/permissions.md, spec/core/risk-classes.md and spec/glossary.md. A declaration states what a harness can do; declaration is not approval.",
+  "$defs": {
+    "scope": {
+      "type": "string",
+      "enum": ["project", "user"],
+      "default": "project",
+      "description": "Reach of a mutation. Project scope limits changes to the target project directory and is the default; user scope touches the global environment and requires an exact preview plus explicit approval. The two scopes MUST NOT be treated as interchangeable. F1: core/permissions.md §1; glossary.md 'Scope'."
+    },
+    "riskClass": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D"],
+      "description": "Risk class: A Passive, B Tooling, C Executable, D Privileged. A risk class states what an artifact can do, not that it is safe or trusted. F1: core/risk-classes.md §1, §5."
+    },
+    "autonomyLevel": {
+      "type": "integer",
+      "enum": [0, 1, 2, 3],
+      "description": "Autonomy friction level: 0 Preview, 1 Safe Apply, 2 Trusted Harness, 3 Elevated. The risk class sets the minimum autonomy floor and there MUST NOT be an absolute bypass. F1: glossary.md 'Autonomy level'; core/permissions.md §6."
+    },
+    "permission": {
+      "type": "object",
+      "required": ["permission", "scope", "riskClass"],
+      "unevaluatedProperties": false,
+      "description": "A declared permission. It MUST include the capability it grants, the scope in which it applies and the risk class of the operations it allows. A declared permission does not imply approval. F1: core/permissions.md §2, §3.",
+      "properties": {
+        "permission": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+          "description": "The capability contract a declaration grants, drawn from the filesystem, network, execution, tools, models, services, secrets and system axes. F1: core/permissions.md §2.1."
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["project", "user"],
+          "default": "project",
+          "description": "The scope in which the permission applies. Project scope is the default. F1: core/permissions.md §1."
+        },
+        "riskClass": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"],
+          "description": "The risk class of the operations the permission allows. F1: core/risk-classes.md §1."
+        },
+        "autonomyLevel": {
+          "type": "integer",
+          "enum": [0, 1, 2, 3],
+          "description": "Optional autonomy level recorded for the permission; it MUST be at least the floor implied by the risk class. F1: core/permissions.md §6."
+        },
+        "justification": {
+          "type": "string",
+          "description": "Optional human-readable justification. It is informative and MUST NOT reduce the declared risk class. F1: core/permissions.md §2.4."
+        }
+      }
+    }
+  }
+}
