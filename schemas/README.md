@@ -67,6 +67,53 @@ Every position touching an item left OPEN by decision record §58 carries an exp
 | Secrets handling | Only `environmentVariableNames` (names only). |
 | Profiles versioning | Five recognized profiles plus an optional namespaced extension branch. |
 
+## F1 traceability matrix
+
+Every non-OPEN constraint in the schema set cites the F1 (`spec/**`) section that authorizes it. This is the direct mitigation for risk R1: a schema convenience that would permit, weaken or contradict an F1 `MUST` is a specification violation and is rejected before freeze, and the inconsistency is never resolved by editing `spec/**` inside this change. §58-OPEN positions are deliberately **not** constraints and are therefore not traced here; they are listed above and marked OPEN in-schema.
+
+| Schema constraint | F1 anchor |
+|---|---|
+| Exactly four REQUIRED top-level fields; root object closed | `spec/manifest/README.md` §2; §5.3 |
+| `apiVersion` is a single value, never a range | `spec/manifest/README.md` §2.1; `spec/core/versioning.md` §3 |
+| `kind` restricted to `[Harness, Component, Preset]` | `spec/manifest/README.md` §2.2; `spec/package/component-types.md` §1 |
+| `metadata` closed; `name` REQUIRED slug 1–64 with no `/` | `spec/manifest/README.md` §3; `spec/core/identity.md` §2 |
+| `version` REQUIRED, valid SemVer | `spec/manifest/README.md` §3; `spec/core/versioning.md` §2 |
+| Optional metadata fields (owner, description, license, author, homepage, repository, keywords) | `spec/manifest/README.md` §3 |
+| `spec` REQUIRED object; `{}` valid; eight OPTIONAL sections | `spec/manifest/README.md` §4; §4.1; §4.2 |
+| Unknown field in a REQUIRED object rejected (`unevaluatedProperties`) | `spec/manifest/README.md` §5.3 |
+| `requirements`: runtime(1), runtimeVersion, modelCapabilities, hardware, services, backends | `spec/core/requirements.md` §2.1–§2.6 |
+| `hardware` closed seven-field resource shape | `spec/core/requirements.md` §2.4 |
+| `permission` entry: permission, scope, riskClass, autonomyLevel | `spec/core/permissions.md` §2; `spec/core/risk-classes.md` §1 |
+| `scope` enum `[project, user]`, default `project` | `spec/core/permissions.md` §1 |
+| `riskClass` enum A–D and `autonomyLevel` 0–3 | `spec/core/risk-classes.md` §1; §4 |
+| `extends` ordered array; optional override; no silent conflict resolution | `spec/core/dependencies.md` §2; §5; §6 |
+| `distribution` digest and provenance; a trust label is verified, not declared | `spec/core/distribution.md` §2; §4; §5; §6 |
+| `compatibility.level` enum native/adapted/partial/untested/unsupported | `spec/core/compatibility.md` §2; §3 |
+| `profile` single value; five recognized profiles | `spec/core/profiles.md` §4 |
+| `componentDescriptor` discriminates the eight canonical types; no `Tool` type | `spec/package/component-types.md` §2; `spec/package/layout.md` §2; §4 |
+| Component descriptor base closed; explicit declaration is authoritative | `spec/package/layout.md` §2; §3 |
+| `conformance` metadata shape (artifact, target, result, tool, date) | `spec/core/conformance-metadata.md` §2; §3 |
+| Model contract REQUIRED elements (input, output, capabilities, resources, executionLocation, fallback, version, artifactSource) | `spec/package/component-types.md` §4 |
+| `executionLocation` enum `[local, remote]` | `spec/package/component-types.md` §4.5 |
+| Model resources reuse the shared hardware definition (never redefined) | `spec/package/component-types.md` §4.4; `spec/core/requirements.md` §2.4 |
+| Service-backed model lifecycle requires all six actions | `spec/package/component-types.md` §4.6; §10 |
+| `capabilities` require at least one; contracts, never hardcoded brands | `spec/package/component-types.md` §4.3 |
+| `artifactSource` `{provider, digest, reference}`; no fixed provider | `spec/package/component-types.md` §4.9; `spec/core/distribution.md` §2 |
+| Router block: typed outputs, thresholds, fallback | `spec/package/component-types.md` §5 |
+| Model contract MUST NOT reference the component descriptor (no cycle) | `spec/package/component-types.md` §5.3 |
+| Install Plan requires all sixteen fields | `spec/install-protocol/README.md` §4 |
+| Plan is deterministic; no timestamp in the core plan | `spec/install-protocol/README.md` §4 |
+| `environmentVariableNames` names-only pattern; no values | `spec/core/permissions.md` §4; `spec/install-protocol/README.md` §4 |
+| `risk` records effective class and required autonomy level | `spec/install-protocol/README.md` §7; `spec/core/risk-classes.md` §3; §4 |
+| `conflicts` carry a reason and an explicit resolution | `spec/core/dependencies.md` §5 |
+| `unsupportedCapabilities` mark required/blocksApply; a required unsupported capability blocks Apply | `spec/core/compatibility.md` §2 |
+| Plan contains no executable third-party code; hooks and scripts are references | `spec/install-protocol/README.md` §4 |
+| Plan never requires an upload or remote destination for the local project path | `spec/install-protocol/README.md` §4; §6 |
+| No vendor token in any schema `const`/`enum` (vendor neutrality) | `spec/STYLE.md` §5 |
+| `canonicalIdentifier` host is a variable, never a fixed host | `spec/core/identity.md` §2; §8 |
+| Descriptive fields carry no semantics and never drive a decision | `spec/manifest/README.md` §3 |
+| One manifest document; no aggregate or array root | `spec/manifest/README.md` §1 |
+
 ## Semantic boundary
 
 JSON Schema is necessary but not sufficient for conformance. The checks below cannot be expressed by a schema and are owned by the downstream validation phases.
@@ -92,12 +139,23 @@ An Install Plan contains a local project path and is **local-machine data**. It 
 
 ---
 
+## Pre-freeze blocker (R3)
+
+Risk **R3** is a pre-freeze blocker recorded here and in `docs/adr/0002-schema-strategy.md`: the Rust `jsonschema` crate's support for Draft 2020-12 and `unevaluatedProperties` is **unverified on this machine**, because Rust is not installed here. The dialect is not frozen until F2-05 confirms support in the Rust validator.
+
+Interim proof of portability: the L1 (`ajv` v8, 2020-12) and L2 (Python `jsonschema` + `referencing`) engines validate the same corpus to the same result, so two independent 2020-12 implementations agree on the features this schema set depends on.
+
+Freeze gate state: `r3=pending`. An actual freeze requires the gate to read `FREEZE OK` (`python scripts/schemas/check_schemas.py --freeze`); the ADR and this document are updated when F2-05 confirms support.
+
 ## Verification (what is actually checked)
 
-The schema set is verified in layers, and this section claims only what those layers check — never "100% safe" and never conformance:
+The schema set is verified in layers, and this section claims only what those layers check — never an absolute-safety claim and never a conformance claim:
 
 - **L0** — `python scripts/schemas/check_schemas.py`: JSON parse, Draft 2020-12 dialect, `$ref` integrity against `registry.json` and disk, vendor-free `const`/`enum`, §58 OPEN markers, no reference cycle, README sections. Python standard library only.
 - **L1** — `npm run validate:schemas`: ajv v8 in 2020-12 mode over the change-folder corpus (positive instances MUST pass; negative instances MUST fail with the expected `{path, keyword}`).
-- **L2** — `python scripts/schemas/cross_check.py` (F2-05 / PR 5): the same corpus under Python `jsonschema` + `referencing.Registry` as an independent engine.
+- **L2** — `python scripts/schemas/cross_check.py`: the same corpus under Python `jsonschema` + `referencing.Registry` as an independent engine.
 
-Verification of the schema layer proves only that the schemas parse, that the corpus passes/fails as declared, and that the structural checks above hold. It does not prove that any harness is safe or conformant.
+## Trust statement
+
+Verification of the schema layer proves only that the schemas parse, that the reference graph resolves, and that the corpus passes and fails as declared. It does not prove that any harness is safe, secure or conformant, and it is not a security guarantee. Each layer names exactly the checks it performs and claims nothing beyond them. The artifacts are risk class A (Passive), default autonomy 0 (Preview): the schema layer performs no mutation and executes no third-party code.
+

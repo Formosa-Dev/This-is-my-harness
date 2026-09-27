@@ -21,6 +21,11 @@ Modes::
     python scripts/schemas/check_schemas.py            # full L0 check
     python scripts/schemas/check_schemas.py --self-test # 5 adversarial fixtures
     python scripts/schemas/check_schemas.py --readme    # README sections only
+    python scripts/schemas/check_schemas.py --guards    # cycle/leaf structural guards
+    python scripts/schemas/check_schemas.py --trace     # F1 traceability matrix (PR 5)
+    python scripts/schemas/check_schemas.py --adr       # ADR-0002 headings (PR 5)
+    python scripts/schemas/check_schemas.py --freeze    # pre-freeze R3 gate (PR 5)
+    python scripts/schemas/check_schemas.py --trust     # trust statement (PR 5)
 
 Exit code is 0 on success and 1 on any failure.
 """
@@ -100,6 +105,45 @@ README_SECTIONS = (
     ("§58-open-items", ("58",)),
     ("semantic-boundary", ("semantic",)),
     ("install-plan-local-only", ("local-only", "local only", "never uploaded")),
+)
+
+# --- PR 5 deliverables (cross-check, traceability, ADR, freeze, trust) --------
+
+ADR_PATH = "docs/adr/0002-schema-strategy.md"
+TRACE_HEADING = "f1 traceability matrix"
+TRUST_HEADING = "trust statement"
+
+# The ADR template defines exactly these seven `##` sections; ADR-0002 MUST
+# follow docs/adr/0000-template.md rather than invent a shape of its own.
+ADR_HEADINGS = (
+    "context",
+    "decision",
+    "rationale",
+    "rejected alternatives",
+    "consequences",
+    "status of related decisions",
+    "references",
+)
+
+# Machine-readable state marker for risk R3 (dialect support in the Rust
+# validator, F2-05). `pending` blocks an actual freeze; `confirmed` clears it.
+R3_STATE_RE = re.compile(r"r3\s*=\s*(pending|confirmed)", re.IGNORECASE)
+
+# Absolute-safety / conformance overclaims the trust statement MUST NOT make.
+FORBIDDEN_CLAIMS = (
+    "100% safe",
+    "100 percent safe",
+    "100% secure",
+    "guaranteed safe",
+    "guarantees safety",
+    "guaranteed secure",
+    "proves conformance",
+    "proven conformance",
+    "certified conformant",
+    "guarantees conformance",
+    "fully conformant",
+    "is conformant",
+    "are conformant",
 )
 
 
@@ -435,6 +479,165 @@ def run_readme(root):
     return 1
 
 
+# --- PR 5 gates --------------------------------------------------------------
+
+
+def read_sections(path):
+    """Split a markdown file into ``{lowercased `## ` heading: [body lines]}``."""
+    sections = {}
+    current = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            current = line[3:].strip().lower()
+            sections[current] = []
+        elif current is not None:
+            sections[current].append(line)
+    return sections
+
+
+def _parse_table(lines):
+    """Yield non-header, non-separator markdown table rows as cell lists."""
+    rows = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if all(re.fullmatch(r":?-{2,}:?", cell) for cell in cells):
+            continue
+        if cells and cells[0].lower() in ("schema constraint", "constraint"):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def run_trace(root):
+    """Every non-OPEN constraint row MUST cite a real F1 anchor in spec/**.
+
+    The matrix is the mitigation for R1 (schema/spec divergence). Rows without an
+    anchor, or whose anchor names a ``spec/**.md`` file that does not exist, or
+    that carries no section reference, count as untraced. A weakening constraint
+    is rejected by review against the cited anchor; this check guarantees no row
+    is left unanchored.
+    """
+    path = Path(root) / README_PATH
+    if not path.exists():
+        print(f"FAIL missing: {README_PATH}")
+        return 1
+    sections = read_sections(path)
+    if TRACE_HEADING not in sections:
+        print(f"FAIL trace: missing '{TRACE_HEADING}' section in {README_PATH}")
+        return 1
+
+    rows = _parse_table(sections[TRACE_HEADING])
+    untraced = []
+    for row in rows:
+        if len(row) < 2 or not row[0]:
+            untraced.append("(malformed row)")
+            continue
+        anchor = row[1]
+        match = re.search(r"`(spec/[^`]+\.md)`", anchor)
+        if not match or "§" not in anchor:
+            untraced.append(row[0])
+            continue
+        if not (Path(root) / match.group(1)).exists():
+            untraced.append(f"{row[0]} -> missing {match.group(1)}")
+
+    if untraced:
+        for item in untraced:
+            print(f"FAIL trace: untraced constraint: {item}")
+        print(f"FAIL TRACE rows={len(rows)} untraced={len(untraced)}")
+        return 1
+
+    print(f"TRACE OK rows={len(rows)} untraced=0")
+    return 0
+
+
+def run_adr(root):
+    """ADR-0002 MUST follow docs/adr/0000-template.md (exactly seven sections)."""
+    path = Path(root) / ADR_PATH
+    if not path.exists():
+        print(f"FAIL missing: {ADR_PATH}")
+        return 1
+    headings = [
+        line[3:].strip().lower()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("## ")
+    ]
+    missing = [name for name in ADR_HEADINGS if name not in headings]
+    if missing or len(headings) != len(ADR_HEADINGS):
+        print(
+            f"FAIL ADR headings={len(headings)} "
+            f"missing={','.join(missing) if missing else 'none'}"
+        )
+        return 1
+    print(f"ADR OK headings={len(headings)}")
+    return 0
+
+
+def run_freeze(root):
+    """Gate the freeze on risk R3 (Rust dialect support) being recorded.
+
+    R3 is recorded as a pre-freeze blocker in both the ADR and the README. While
+    it is ``pending`` the freeze is blocked (this is expected until F2-05 confirms
+    Rust ``jsonschema`` support for 2020-12 ``unevaluatedProperties``; L1/L2
+    parity is the interim proof). The check certifies the blocker is recorded;
+    an actual freeze requires the state to read ``FREEZE OK r3=confirmed``.
+    """
+    states = {}
+    for rel in (ADR_PATH, README_PATH):
+        path = Path(root) / rel
+        if not path.exists():
+            print(f"FAIL missing: {rel}")
+            return 1
+        match = R3_STATE_RE.search(path.read_text(encoding="utf-8"))
+        if not match:
+            print(f"FAIL freeze: r3 state not recorded in {rel}")
+            return 1
+        states[rel] = match.group(1).lower()
+
+    unique = set(states.values())
+    if len(unique) != 1:
+        print(f"FAIL freeze: r3 state mismatch {states}")
+        return 1
+    state = unique.pop()
+    if state == "confirmed":
+        print("FREEZE OK r3=confirmed")
+    else:
+        print("FREEZE BLOCKED r3=pending")
+    return 0
+
+
+def run_trust(root):
+    """README MUST carry a trust statement and MUST NOT overclaim safety."""
+    path = Path(root) / README_PATH
+    if not path.exists():
+        print(f"FAIL missing: {README_PATH}")
+        return 1
+    sections = read_sections(path)
+    body = "\n".join(sections.get(TRUST_HEADING, [])).strip()
+    if not body:
+        print(f"FAIL trust: missing non-empty '{TRUST_HEADING}' section in {README_PATH}")
+        return 1
+
+    offenders = []
+    for rel in (README_PATH, ADR_PATH):
+        doc = Path(root) / rel
+        if not doc.exists():
+            continue
+        low = doc.read_text(encoding="utf-8").lower()
+        for claim in FORBIDDEN_CLAIMS:
+            if claim in low:
+                offenders.append(f"{rel}: {claim!r}")
+    if offenders:
+        for offender in offenders:
+            print(f"FAIL trust: overclaim {offender}")
+        return 1
+
+    print("TRUST OK")
+    return 0
+
+
 # --- L0 run ------------------------------------------------------------------
 
 
@@ -571,6 +774,26 @@ def main(argv=None):
         action="store_true",
         help="assert the cycle/leaf structural guards (model-contract has no component edge; install-plan refs leaf defs only)",
     )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="check the F1 traceability matrix in the README (PR 5)",
+    )
+    parser.add_argument(
+        "--adr",
+        action="store_true",
+        help="check docs/adr/0002-schema-strategy.md against the ADR template (PR 5)",
+    )
+    parser.add_argument(
+        "--freeze",
+        action="store_true",
+        help="report the pre-freeze R3 gate state (PR 5)",
+    )
+    parser.add_argument(
+        "--trust",
+        action="store_true",
+        help="check the README trust statement for overclaims (PR 5)",
+    )
     args = parser.parse_args(argv)
 
     root = Path(__file__).resolve().parents[2]
@@ -580,6 +803,14 @@ def main(argv=None):
         return run_readme(root)
     if args.guards:
         return run_guards(root)
+    if args.trace:
+        return run_trace(root)
+    if args.adr:
+        return run_adr(root)
+    if args.freeze:
+        return run_freeze(root)
+    if args.trust:
+        return run_trust(root)
     return run_l0(root)
 
 
