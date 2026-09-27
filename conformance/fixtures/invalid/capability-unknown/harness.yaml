@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: an unknown capability (F3-03).
+# A declared capability absent from the known-capability registry is an error.
+# Expected: capability.unknown at
+# /spec/requirements/modelCapabilities/0/capability (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: unknown-capability
+  version: 0.1.0
+spec:
+  requirements:
+    modelCapabilities:
+      - capability: models.does-not-exist

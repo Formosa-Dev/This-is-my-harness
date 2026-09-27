@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a declared path that resolves outside the root through a
+# symlink (F3-04). The declared path is lexically safe, so the escape can only
+# be observed through the filesystem layer. Expected: path.symlink_escape at
+# /spec/components/0/path. See SETUP.md for how the runner materializes it.
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: path-symlink-escape
+  version: 0.1.0
+spec:
+  components:
+    - type: Skill
+      name: linked
+      path: escape-link

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a malformed manifest (F3-03).
+# The YAML flow mapping is not closed, so the document cannot be parsed.
+# Expected: parse.invalid (status error, exit 2).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: broken-manifest
+  version: 0.1.0
+spec: {

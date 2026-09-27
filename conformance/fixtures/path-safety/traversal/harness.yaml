@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a declared path traversal (F3-04).
+# A component path MUST be relative to the package root and MUST NOT contain
+# `..`. Expected: path.traversal at /spec/components/0/path (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: path-traversal
+  version: 0.1.0
+spec:
+  components:
+    - type: Skill
+      name: escape
+      path: ../outside/skill

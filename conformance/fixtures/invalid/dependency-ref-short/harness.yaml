@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a broken dependency reference (F3-03).
+# A short reference (`owner/slug`) is forbidden inside a published document.
+# Expected: schema.pattern and semantic.identity_ref_short_forbidden at
+# /spec/extends/0/reference (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: broken-dependency
+  version: 0.1.0
+spec:
+  extends:
+    - reference: example-owner/base-harness

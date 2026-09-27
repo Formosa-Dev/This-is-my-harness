@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a manifest missing a REQUIRED field (F3-03).
+# `spec` is REQUIRED at the root. Expected: schema.required at "" (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: missing-spec
+  version: 0.1.0

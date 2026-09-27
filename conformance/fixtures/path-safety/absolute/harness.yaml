@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a declared absolute path (F3-04).
+# A component path MUST be relative to the package root.
+# Expected: path.absolute at /spec/components/0/path (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: path-absolute
+  version: 0.1.0
+spec:
+  components:
+    - type: Skill
+      name: escape
+      path: /etc/passwd

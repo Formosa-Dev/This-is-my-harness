@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: a field with the wrong type (F3-03).
+# `metadata` MUST be an object. Expected: schema.type at /metadata (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata: "not-an-object"
+spec: {}

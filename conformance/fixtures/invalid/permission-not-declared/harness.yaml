@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: CC0-1.0
+# Conformance fixture: an undeclared permission (F3-03).
+# A Service component is above Passive, so its capability MUST be declared.
+# Expected: semantic.permission_coverage at /spec/permissions (exit 1).
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: undeclared-permission
+  version: 0.1.0
+spec:
+  components:
+    - type: Service
+      name: local-service
+      path: services/local-service.json
