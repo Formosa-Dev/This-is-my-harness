@@ -27,45 +27,70 @@ jobs:
             !Formosa.dev Harnesses*
             !This is my Harness*
 
-  schema-validation:
-    name: JSON Schema validation (placeholder)
+  schema-gates:
+    name: Schema gates (L0/L1/L2)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Placeholder. This asserts that every JSON document under schemas/ parses.
-      # Once a real validator exists (F2), replace this with JSON Schema
-      # metaschema + instance validation.
-      - name: Validate that schemas/*.json parse
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s globstar nullglob
-          files=(schemas/**/*.json schemas/*.json)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No JSON files under schemas/ yet — skipping."
-            exit 0
-          fi
-          for f in "${files[@]}"; do
-            echo "Checking $f"
-            python3 -m json.tool "$f" > /dev/null
-          done
-          echo "All schema JSON files parsed."
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      # Placeholder for adapter/extension/example schema checks added in later phases.
-      - name: Validate extension and conformance JSON (placeholder)
-        shell: bash
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # L0 structural pre-check (Python standard library only): dialect, $ref
+      # integrity against registry.json and disk, vendor-free const/enum, §58
+      # OPEN markers, no reference cycle, README sections.
+      - name: "L0: check_schemas.py"
+        run: python scripts/schemas/check_schemas.py
+
+      # R3 freeze gate: the dialect blocker must be recorded as confirmed in
+      # both docs/adr/0002-schema-strategy.md and schemas/README.md.
+      - name: "L0: R3 freeze gate"
+        run: python scripts/schemas/check_schemas.py --freeze
+
+      # L1: ajv v8 in 2020-12 mode over the promoted corpus.
+      - name: "L1: ajv corpus validation"
         run: |
-          set -euo pipefail
-          shopt -s globstar nullglob
-          files=(extensions/**/*.json conformance/**/*.json examples/**/*.json)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No JSON files in extensions/, conformance/ or examples/ yet — skipping."
-            exit 0
-          fi
-          for f in "${files[@]}"; do
-            echo "Checking $f"
-            python3 -m json.tool "$f" > /dev/null
-          done
-          echo "All extension/conformance/example JSON files parsed."
+          npm ci
+          npm run validate:schemas
+
+      # L2: the same corpus under the independent Python engine.
+      - name: "L2: Python cross-check"
+        run: |
+          python -m pip install --disable-pip-version-check jsonschema referencing pyyaml
+          python scripts/schemas/cross_check.py
+
+  rust-validator:
+    name: Rust validator (build, test, clippy, fmt)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Reproducible build from the committed lockfile.
+      - name: cargo build
+        run: cargo build --workspace --locked
+
+      # Corpus (7 positive / 16 negative) + adversarial suite + CLI end-to-end:
+      # the primary validation gate.
+      - name: cargo test
+        run: cargo test --workspace
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check

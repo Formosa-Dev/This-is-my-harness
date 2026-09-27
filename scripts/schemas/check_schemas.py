@@ -24,7 +24,7 @@ Modes::
     python scripts/schemas/check_schemas.py --guards    # cycle/leaf structural guards
     python scripts/schemas/check_schemas.py --trace     # F1 traceability matrix (PR 5)
     python scripts/schemas/check_schemas.py --adr       # ADR-0002 headings (PR 5)
-    python scripts/schemas/check_schemas.py --freeze    # pre-freeze R3 gate (PR 5)
+    python scripts/schemas/check_schemas.py --freeze    # R3 freeze gate (exit 1 while blocked)
     python scripts/schemas/check_schemas.py --trust     # trust statement (PR 5)
 
 Exit code is 0 on success and 1 on any failure.
@@ -578,11 +578,13 @@ def run_adr(root):
 def run_freeze(root):
     """Gate the freeze on risk R3 (Rust dialect support) being recorded.
 
-    R3 is recorded as a pre-freeze blocker in both the ADR and the README. While
-    it is ``pending`` the freeze is blocked (this is expected until F2-05 confirms
-    Rust ``jsonschema`` support for 2020-12 ``unevaluatedProperties``; L1/L2
-    parity is the interim proof). The check certifies the blocker is recorded;
-    an actual freeze requires the state to read ``FREEZE OK r3=confirmed``.
+    R3 is recorded in both the ADR and the README with a machine-readable state
+    marker, and this is a real freeze gate: while the state is ``pending`` the
+    freeze is blocked and the command FAILS (exit 1); only ``confirmed`` passes
+    (``FREEZE OK r3=confirmed``, exit 0). Confirmation requires executed evidence
+    (the Rust ``jsonschema`` engine reproducing the frozen corpus offline), not a
+    declaration, so the gate refuses to pass while a blocker is open. The gate
+    also fails closed if the two records disagree or a record is missing.
     """
     states = {}
     for rel in (ADR_PATH, README_PATH):
@@ -603,9 +605,9 @@ def run_freeze(root):
     state = unique.pop()
     if state == "confirmed":
         print("FREEZE OK r3=confirmed")
-    else:
-        print("FREEZE BLOCKED r3=pending")
-    return 0
+        return 0
+    print("FREEZE BLOCKED r3=pending")
+    return 1
 
 
 def run_trust(root):
@@ -787,7 +789,7 @@ def main(argv=None):
     parser.add_argument(
         "--freeze",
         action="store_true",
-        help="report the pre-freeze R3 gate state (PR 5)",
+        help="R3 freeze gate: exit 1 while the dialect blocker is pending (PR 5)",
     )
     parser.add_argument(
         "--trust",

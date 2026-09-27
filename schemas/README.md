@@ -36,7 +36,7 @@ Every schema and shared definition declares a unique `$id` under the base namesp
 
 | Consumer | How it resolves offline |
 |---|---|
-| Rust validator (F2-05..F2-12) | Builds a registry from `registry.json`; no network. Dialect support confirmed before freeze (R3). |
+| Rust validator (F2-05..F2-12) | Builds a registry from `registry.json`; no network. Dialect support **confirmed** (R3: `jsonschema 0.58.1` reproduces the corpus offline). |
 | SDK (later) | Codegen *from* JSON Schema via the registry; never hand-written parallel types. |
 | Web / F17 | Fetches the absolute `$id` or ships the registry bundle; same URIs. |
 
@@ -114,26 +114,27 @@ Every non-OPEN constraint in the schema set cites the F1 (`spec/**`) section tha
 | Descriptive fields carry no semantics and never drive a decision | `spec/manifest/README.md` §3 |
 | One manifest document; no aggregate or array root | `spec/manifest/README.md` §1 |
 
-## Semantic boundary
+## Semantic boundary: the authoritative layer to task matrix
 
-JSON Schema is necessary but not sufficient for conformance. The checks below cannot be expressed by a schema and are owned by the downstream validation phases.
+JSON Schema is necessary but not sufficient for conformance. The checks below cannot be expressed by a schema; each is owned by one validation layer. **This is the ONE authoritative layer to task matrix (the ratified Q5).** The copy in `packages/validator/README.md` MUST stay identical; where any other table disagrees, **this matrix prevails** and the other table MUST be corrected. Every deferred check names its owning phase (F4/F7/F15) and MUST NOT be implied as delivered.
 
-| Semantic check | Why the schema cannot express it | Owner |
-|---|---|---|
-| Supported `apiVersion` set and migration map | A `const` fixes one value; the supported set and the unknown-version typed error are runtime logic. | F2-11 |
-| Unknown `kind` unless a compatible extension is present | Requires the extension registry. | F2-06 |
-| Reference resolution (scoped refs, digest resolution) | Graph-level, needs the resolver and the registry. | F2-06 |
-| Dependency-graph analysis (cycles, conflicts, duplicate identity) | The schema validates the `extends` shape only; the graph is semantic. | F2-06 |
-| Permission coverage for capabilities above Passive | Cross-section rule across `components` and `permissions`. | F2-06 |
-| Effective risk, monotonicity and the autonomy floor | A maximum over parts and a floor derived from risk class. | F2-05 |
-| Capability existence against the extension registry | Existence is a registry lookup, not a shape. | F2-07 |
-| Package discovery, path safety and symlink containment | Filesystem semantics, not a document shape. | F2-08 |
-| Install-Plan determinism and binding to inputs | A runtime property of plan generation, not a schema constraint. | F2-09 |
-| Trust-label precision and declared-vs-verified compatibility | Requires conformance evidence. | F2-10 |
-| `environmentVariableNames` are names, not values | A secret value can be shaped like a name; needs a semantic scan. | F2-12 |
-| Digest / immutability semantics | Tag-to-digest and published immutability are registry behaviour. | F2-07 |
-| Model `license` SPDX identifier shape | F1 (`package/component-types.md` §4.8) fixes no SPDX grammar, so an identifier-shaped string is not schema-expressible without inventing one. | F2-12 |
-| Model `license` vs package `metadata.license` contradiction (Q7) | Whether a model license duplicates the package license declared once is OPEN (§58 / Q7); the schema retains an optional model `license` and decides no duplicate-declaration rule. | F2-10 |
+| Check (semantic-boundary row) | Layer | Scope | F2 task | Owning phase | Notes |
+|---|---|---|---|---|---|
+| All schema-expressible constraints (types, required, patterns, enums, consts, closure) | structural | IN | F2-05 | F2 | The JSON Schema layer; engine errors are mapped to the validator's own `schema.*` codes. |
+| Supported `apiVersion` set and migration map | version | IN | F2-11 | F2 | Supported set `{thisismyharness.dev/v1alpha1}`; static no-op migration stub; §58 OPEN. |
+| Unknown `kind` unless a compatible extension is present | document | PARTIAL | F2-06 | F2 (extension lookup → F4) | `kind` is a closed structural enum; extension-kind lookup needs a registry → F4. |
+| Reference resolution (scoped refs, digest) | semantic (identity) | PARTIAL | F2-06 | F2 (digest/network → F4/F7) | Reference grammar, host consistency and short-ref-forbidden are checked; digest/network are not. |
+| Dependency-graph analysis (cycles, conflicts, duplicate identity) | semantic (dependencies) | PARTIAL | F2-06 | F2 (full resolver → F4) | Ordered `extends`, kind composition and self/known-set cycles are checked; the full resolver is not. |
+| Permission coverage for capabilities above Passive | semantic (permissions) | IN | F2-06 | F2 | Cross-section rule across `components` and `permissions`. |
+| Effective risk, monotonicity and the autonomy floor | semantic (permissions) | IN | F2-05/06 | F2 | Effective = maximum over parts; autonomy ≥ floor(risk). |
+| Capability existence against the extension registry | capability | IN | F2-07 | F2 | Resolved against the checked-in `schemas/capabilities.json`; unknown → `capability.unknown`. |
+| Package discovery, path safety and symlink containment | filesystem | PARTIAL | F2-08 | F2 (whole-tree discovery → F4) | Declared-path traversal is checked now; whole-tree discovery and containment are F4. |
+| Install-Plan determinism and binding to inputs | — | OUT | — | F4 | The plan document shape is structural; determinism is a generator property. |
+| Trust-label precision and declared-vs-verified compatibility | — | OUT | — | F7/F15 | Requires conformance evidence. |
+| `environmentVariableNames` are names, not values | semantic (components) | IN | F2-06/F2-12 | F2 | The structural `pattern` rejects `KEY=value`; a value-like heuristic adds `semantic.env_value_like`. |
+| Digest / immutability semantics | — | OUT | — | F7 | Tag-to-digest and published immutability are registry behaviour. |
+| Model `license` SPDX identifier shape | semantic (components) | IN | F2-12 | F2 | F1 (`package/component-types.md` §4.8) fixes no grammar; a documented heuristic, marked OPEN (§58). |
+| Model `license` vs package `metadata.license` (Q7) | semantic (components) | PARTIAL | F2-10 | F2 | Checked only when both instances are provided; otherwise a not-evaluated warning, never guessed. |
 
 ## Install Plan is local-only
 
@@ -141,13 +142,13 @@ An Install Plan contains a local project path and is **local-machine data**. It 
 
 ---
 
-## Pre-freeze blocker (R3)
+## Pre-freeze blocker (R3) — CONFIRMED
 
-Risk **R3** is a pre-freeze blocker recorded here and in `docs/adr/0002-schema-strategy.md`: the Rust `jsonschema` crate's support for Draft 2020-12 and `unevaluatedProperties` is **unverified on this machine**, because Rust is not installed here. The dialect is not frozen until F2-05 confirms support in the Rust validator.
+Risk **R3** (does the Rust implementation language support Draft 2020-12 with `unevaluatedProperties` under composition?) is **confirmed** and no longer blocks the freeze. The record cites executed evidence, not a safety claim: the `jsonschema 0.58.1` engine (with `referencing 0.58.1`), built `default-features = false` and used with `.offline()`, resolved this schema set's absolute `$id`s offline and reproduced the frozen corpus **exactly** — **7/7 positives valid, 16/16 negatives rejected, 0 keyword mismatches**, including every `unevaluatedProperties` case. The result is identical to the independent L1 (`ajv` v8, 2020-12) and L2 (Python `jsonschema` + `referencing`) engines.
 
-Interim proof of portability: the L1 (`ajv` v8, 2020-12) and L2 (Python `jsonschema` + `referencing`) engines validate the same corpus to the same result, so two independent 2020-12 implementations agree on the features this schema set depends on.
+The freeze gate state is `r3=confirmed`, recorded here and in `docs/adr/0002-schema-strategy.md`. Running `python scripts/schemas/check_schemas.py --freeze` prints `FREEZE OK r3=confirmed` and exits 0; while a blocker is open the gate prints `FREEZE BLOCKED r3=pending` and exits non-zero.
 
-Freeze gate state: `r3=pending`. An actual freeze requires the gate to read `FREEZE OK` (`python scripts/schemas/check_schemas.py --freeze`); the ADR and this document are updated when F2-05 confirms support.
+The missing GNU assembler (`as`) on the `windows-gnu` toolchain is a **separate, explicitly-open environment prerequisite** (Q13, tracked in `Cargo.toml` and `rust-toolchain.toml`), **not part of R3**. R3 concerns dialect and closure support; the environment fix must land before F4.
 
 ## Verification (what is actually checked)
 
@@ -156,8 +157,8 @@ The schema set is verified in layers, and this section claims only what those la
 - **L0** — `python scripts/schemas/check_schemas.py`: JSON parse, Draft 2020-12 dialect, `$ref` integrity against `registry.json` and disk, vendor-free `const`/`enum`, §58 OPEN markers, no reference cycle, README sections. Python standard library only.
 - **L1** — `npm run validate:schemas`: ajv v8 in 2020-12 mode over the change-folder corpus (positive instances MUST pass; negative instances MUST fail with the expected `{path, keyword}`).
 - **L2** — `python scripts/schemas/cross_check.py`: the same corpus under Python `jsonschema` + `referencing.Registry` as an independent engine.
+- **L3** — `cargo test --workspace` in `packages/validator`: the Rust validator (`jsonschema 0.58.1`, offline) reproduces the same 7 positive / 16 negative corpus as its primary gate, plus the adversarial suite and the `harness validate` CLI end-to-end tests. This is the executed R3 evidence.
 
 ## Trust statement
 
 Verification of the schema layer proves only that the schemas parse, that the reference graph resolves, and that the corpus passes and fails as declared. It does not prove that any harness is safe, secure or conformant, and it is not a security guarantee. Each layer names exactly the checks it performs and claims nothing beyond them. The artifacts are risk class A (Passive), default autonomy 0 (Preview): the schema layer performs no mutation and executes no third-party code.
-
