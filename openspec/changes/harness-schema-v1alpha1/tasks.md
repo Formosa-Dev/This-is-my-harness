@@ -50,11 +50,11 @@ Alternative chain: `feature-branch-chain` with a `harness-schema-v1alpha1` track
 
 ## Phase 3 — F2-01: manifest root schema (PR 3)
 
-- [ ] 3.1 `schemas/harness.v1alpha1.schema.json` root: `unevaluatedProperties:false`; 4 REQUIRED (`apiVersion`, `kind`, `metadata`, `spec`); `apiVersion` `const`; `kind` enum `[Harness, Component, Preset]`; closed `metadata` (`name` slug 1–64 no `/`, `version` SemVer, optional owner/description/license/author/homepage/repository/keywords). Deps: 2.5. **Verify:** L0 → `OK ... schemas=1 refs=3`.
-- [ ] 3.2 Same file: closed `spec` with 8 OPTIONAL sections (`profile`, `components`, `requirements`, `permissions`, `extends`, `distribution`, `compatibility`, `conformance`); `extends` ordered array + optional `override`. Deps: 3.1. **Verify:** L0 → `OK ... refs=11`.
-- [ ] 3.3 Positives `openspec/changes/harness-schema-v1alpha1/examples/positive/{manifest.minimal.yaml,manifest.rich.yaml}` (`spec:{}`; rich exercises all 8 sections). Deps: 3.2. **Verify:** `npm run validate:schemas` → `PASS ... positive=2`.
-- [ ] 3.4 **Adversarial (pairs 3.1–3.2):** 5 negatives `examples/negative/manifest.*.json` — missing `apiVersion`, unknown top-level, unknown `metadata` field, bad slug, bad SemVer — each with expected `{path, keyword}`. Deps: 3.2. **Verify:** `npm run validate:schemas` → `PASS ... negative=5`; each record matches its expected path/keyword.
-- [ ] 3.5 Wire corpus `positive`/`negative` entries. Deps: 3.3, 3.4. **Verify:** `npm run validate:schemas` → exit 0, `PASS schemas=1 positive=2 negative=5`.
+- [x] 3.1 `schemas/harness.v1alpha1.schema.json` root: `unevaluatedProperties:false`; 4 REQUIRED (`apiVersion`, `kind`, `metadata`, `spec`); `apiVersion` `const`; `kind` enum `[Harness, Component, Preset]`; closed `metadata` (`name` slug 1–64 no `/`, `version` SemVer, optional owner/description/license/author/homepage/repository/keywords). Deps: 2.5. **Verify:** L0 → `OK ... schemas=1 refs=3`. @2026-09-26
+- [x] 3.2 Same file: closed `spec` with 8 OPTIONAL sections (`profile`, `components`, `requirements`, `permissions`, `extends`, `distribution`, `compatibility`, `conformance`); `extends` ordered array + optional `override`. Deps: 3.1. **Verify:** L0 → `OK ... refs=11`. @2026-09-26
+- [x] 3.3 Positives `openspec/changes/harness-schema-v1alpha1/examples/positive/{manifest.minimal.yaml,manifest.rich.yaml}` (`spec:{}`; rich exercises all 8 sections). Deps: 3.2. **Verify:** `npm run validate:schemas` → `PASS ... positive=2`. @2026-09-26
+- [x] 3.4 **Adversarial (pairs 3.1–3.2):** 5 negatives `examples/negative/manifest.*.json` — missing `apiVersion`, unknown top-level, unknown `metadata` field, bad slug, bad SemVer — each with expected `{path, keyword}`. Deps: 3.2. **Verify:** `npm run validate:schemas` → `PASS ... negative=5`; each record matches its expected path/keyword. @2026-09-26
+- [x] 3.5 Wire corpus `positive`/`negative` entries. Deps: 3.3, 3.4. **Verify:** `npm run validate:schemas` → exit 0, `PASS schemas=1 positive=2 negative=5`. @2026-09-26
 
 ## Phase 4 — F2-03/F2-04: model contract + Install Plan (PR 4)
 

@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+  "title": "Harness manifest (v1alpha1)",
+  "description": "Machine-readable document shape of the canonical harness manifest (F2-01). NON-NORMATIVE machine artifact: the normative source is spec/manifest/README.md and the spec/core/** documents it cites. The document has exactly four top-level fields; all four are REQUIRED and the root object is closed. The working filename is harness.yaml and the definitive filename is OPEN (decision record §58, open question 'definitive manifest filename'), so this schema describes a document shape and does not fix a filename. Anchors: manifest/README.md §2-§5; core/identity.md §2; core/versioning.md §3.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "thisismyharness.dev/v1alpha1",
+      "description": "The single spec version the artifact targets. Exactly one value; it MUST NOT be a range. A validator MUST reject a version it does not support (semantic ownership). F1: manifest/README.md §2, §2.1; core/versioning.md §3."
+    },
+    "kind": {
+      "enum": ["Harness", "Component", "Preset"],
+      "description": "The artifact kind. Exactly three kinds are recognized at v1alpha1, and the list is exhaustive on the Core branch. An extension kind MUST be namespaced and is validated by the extension's own schema; rejecting an unknown kind unless a compatible extension is present is a semantic check owned by the validation phases. F1: manifest/README.md §2, §2.2; package/component-types.md §1."
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version"],
+      "unevaluatedProperties": false,
+      "description": "Identity and descriptive metadata. The object is closed: an unknown field MUST be rejected. Descriptive fields carry no semantics and MUST NOT be used by a resolver for a compatibility or permission decision (behavioral; semantic ownership). F1: manifest/README.md §3, §5.3; core/identity.md §2; core/versioning.md §2.",
+      "properties": {
+        "name": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/slugName",
+          "description": "The slug of the harness. The slug only: it MUST NOT contain '/' or an owner segment. F1: manifest/README.md §3, §3.2; core/identity.md §2."
+        },
+        "version": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/semver",
+          "description": "The package version. MUST be valid Semantic Versioning 2.0.0. F1: manifest/README.md §3; core/versioning.md §2."
+        },
+        "owner": {
+          "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/owner",
+          "description": "The namespace authority. When present it MUST match the owner of the canonical identifier under which the artifact is published (semantic). F1: manifest/README.md §3; core/identity.md §2, §5."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable summary. Carries no semantics. F1: manifest/README.md §3."
+        },
+        "license": {
+          "type": "string",
+          "description": "The license of the package (for example an SPDX identifier). If declared, it MUST appear in exactly one place for the package (across-package rule; semantic). F1: manifest/README.md §3; core/distribution.md §7."
+        },
+        "author": {
+          "type": "string",
+          "description": "The author or maintainer name. This is NOT a security guarantee and MUST NOT be presented as verified identity. F1: manifest/README.md §3."
+        },
+        "homepage": {
+          "type": "string",
+          "description": "A URL for human consumption. F1: manifest/README.md §3."
+        },
+        "repository": {
+          "type": "string",
+          "description": "The source repository. Distribution provenance MAY restate it. F1: manifest/README.md §3; core/distribution.md §6."
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of human-facing tags. Tags MUST NOT be used to infer capabilities. F1: manifest/README.md §3."
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "description": "The declarative composition. REQUIRED as an object; an empty object is valid and yields a harness that is passive by construction. A section that is present MUST be well-formed; a malformed section MUST cause rejection and MUST NOT be ignored. F1: manifest/README.md §4, §4.1, §4.2.",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "description": "The primary profile this harness specializes; at most one (a single value). The five recognized profiles are developer, web-agent, local-hybrid, multi-agent and workflow-automation. A namespaced extension profile is accepted on the same field. How profiles are versioned is OPEN (decision record §58, open question 'profiles versioning'); the existence of an extension profile is a semantic check. F1: core/profiles.md §4.",
+          "anyOf": [
+            {
+              "enum": ["developer", "web-agent", "local-hybrid", "multi-agent", "workflow-automation"]
+            },
+            {
+              "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$"
+            }
+          ]
+        },
+        "components": {
+          "type": "array",
+          "description": "Explicit component declarations. An explicit declaration is authoritative over conventional discovery, and ambiguity between the two MUST be rejected (semantic). A component MUST declare its type. F1: package/layout.md §2; package/component-types.md §2.",
+          "items": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/component.schema.json#/$defs/componentDescriptor"
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "description": "Runtime, model, hardware, service and backend requirements. Each declared requirement is a definite predicate evaluated before any mutation. Only the fields below are defined at v1alpha1. F1: core/requirements.md §2.",
+          "properties": {
+            "runtime": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/runtime"
+            },
+            "runtimeVersion": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/runtimeVersion"
+            },
+            "modelCapabilities": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/modelCapabilities"
+            },
+            "hardware": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/hardware"
+            },
+            "services": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/services"
+            },
+            "backends": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/requirement.schema.json#/$defs/backends"
+            }
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Declared permissions and scopes. Every capability above Passive MUST be declared (cross-section rule; semantic). A declaration is not approval. F1: core/permissions.md §2; core/risk-classes.md §1.",
+          "items": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/permission.schema.json#/$defs/permission"
+          }
+        },
+        "extends": {
+          "type": "array",
+          "description": "Ordered dependencies on other artifacts. The array order is significant for precedence and MUST be preserved by the resolver: the first named dependency outranks later ones. Each entry MAY carry an explicit override. Cycle detection and conflict resolution remain semantic checks. F1: core/dependencies.md §1-§6.",
+          "items": {
+            "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/dependency.schema.json#/$defs/dependencyReference"
+          }
+        },
+        "distribution": {
+          "type": "object",
+          "description": "Distribution and provenance metadata. Artifacts are content-addressed and a digest MUST always resolve to the same bytes. A trust label is the output of verification, not a manifest declaration, so it is not modeled here (declared versus verified). F1: core/distribution.md §2-§6.",
+          "properties": {
+            "artifactType": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/artifactType",
+              "description": "OPEN (decision record §58, open question 'definitive OCI media type'): the media type is a pattern, never fixed. See the referenced definition."
+            },
+            "digest": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/digest"
+            },
+            "provenance": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/provenance"
+            }
+          }
+        },
+        "compatibility": {
+          "type": "object",
+          "description": "Declared EXPECTED compatibility. Expectations are informative and MUST NOT be presented as verified; the verified level is established by conformance. A level is a property of a (capability, target) pair, never stated globally. F1: core/compatibility.md §2-§3.",
+          "properties": {
+            "declared": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["capability", "level"],
+                "properties": {
+                  "capability": {
+                    "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId"
+                  },
+                  "level": {
+                    "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/compatibilityLevel"
+                  },
+                  "difference": {
+                    "type": "string",
+                    "description": "Declared difference from the canonical semantics; required reporting for 'adapted' and 'partial' (semantic). F1: core/compatibility.md §2."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "conformance": {
+          "type": "object",
+          "description": "Conformance metadata: what was tested, against which target and version, and with what result. Conformance is established by tests, never by declaration or badge. F1: core/conformance-metadata.md §2.",
+          "properties": {
+            "artifact": {
+              "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/identity.schema.json#/$defs/canonicalIdentifier"
+            },
+            "target": {
+              "type": "object",
+              "description": "The runtime or adapter against which conformance was established. A claim without a target and a version is not a conformance claim. F1: core/conformance-metadata.md §2.",
+              "properties": {
+                "runtime": {
+                  "type": "string"
+                },
+                "runtimeVersion": {
+                  "type": "string"
+                }
+              }
+            },
+            "apiVersion": {
+              "type": "string",
+              "description": "The spec generation under which the test was run. F1: core/conformance-metadata.md §2."
+            },
+            "adapterVersion": {
+              "type": "string",
+              "description": "The adapter version, where conformance concerns an adapter. F1: core/conformance-metadata.md §2."
+            },
+            "fixtures": {
+              "type": "string",
+              "description": "The fixtures or conformance suite revision used. F1: core/conformance-metadata.md §2."
+            },
+            "capabilities": {
+              "type": "array",
+              "description": "Per-capability results. A claim that a capability is supported MUST rest on a capability result, not on schema validity alone. F1: core/conformance-metadata.md §2, §3.",
+              "items": {
+                "type": "object",
+                "required": ["capability", "level"],
+                "properties": {
+                  "capability": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/distribution.schema.json#/$defs/compatibilityLevel"
+                  },
+                  "gaps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The enumerated gaps for a 'partial' result. F1: core/compatibility.md §2."
+                  }
+                }
+              }
+            },
+            "result": {
+              "enum": ["pass", "fail", "partial"],
+              "description": "Pass, fail or partial, with the failing checks named by the consumer. F1: core/conformance-metadata.md §2."
+            },
+            "tool": {
+              "type": "object",
+              "description": "The tool and version that produced the result. F1: core/conformance-metadata.md §2.",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            },
+            "date": {
+              "type": "string",
+              "description": "When the result was produced. F1: core/conformance-metadata.md §2."
+            }
+          }
+        }
+      }
+    }
+  }
+}

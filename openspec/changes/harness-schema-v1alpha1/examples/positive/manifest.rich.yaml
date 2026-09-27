@@ -1,0 +1,83 @@
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: rich-harness
+  version: 1.2.0
+  owner: example-owner
+  description: A harness exercising every optional spec section.
+  license: Apache-2.0
+  author: Example Maintainer
+  homepage: https://example.org/rich-harness
+  repository: https://example.org/rich-harness.git
+  keywords:
+    - example
+    - reference
+spec:
+  profile: developer
+  components:
+    - type: Skill
+      name: example-skill
+      path: skills/example-skill
+    - type: Model
+      name: example-model
+      path: models/example-model.json
+      payload: {}
+  requirements:
+    runtime: runtime.node
+    runtimeVersion: ">=20 <23"
+    modelCapabilities:
+      - capability: models.text-generation
+    hardware:
+      os:
+        - linux
+      arch:
+        - x86_64
+      cpu:
+        cores: 2
+      ram: 4GiB
+      disk: 2GiB
+    services:
+      - capability: services.vector-store
+        required: false
+    backends:
+      - capability: backends.local-inference
+  permissions:
+    - permission: filesystem.read
+      scope: project
+      riskClass: A
+    - permission: network.outbound
+      scope: project
+      riskClass: B
+  extends:
+    - reference: "@example-owner/base-component"
+      override:
+        note: Pinned to the project-controlled replacement.
+    - reference: https://example.org/h/example-owner/base-harness@1.0.0
+  distribution:
+    artifactType: application/vnd.example.harness.bundle.v1
+    digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    provenance:
+      sourceRepository: https://example.org/rich-harness.git
+  compatibility:
+    declared:
+      - capability: models.text-generation
+        level: adapted
+        difference: Uses a local adapter with an equivalent typed output.
+  conformance:
+    artifact: https://example.org/h/example-owner/rich-harness@1.2.0
+    target:
+      runtime: runtime.node
+      runtimeVersion: "22.17.0"
+    apiVersion: thisismyharness.dev/v1alpha1
+    adapterVersion: 1.0.0
+    fixtures: conformance/rich-harness@1
+    capabilities:
+      - capability: models.text-generation
+        level: adapted
+        gaps:
+          - Streaming output is not honored.
+    result: partial
+    tool:
+      name: conformance-runner
+      version: 1.0.0
+    date: "2026-09-26"
