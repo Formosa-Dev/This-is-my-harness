@@ -1,0 +1,54 @@
+{
+  "input": {
+    "type": "object",
+    "description": "The decision state the router receives.",
+    "properties": {
+      "state": {
+        "type": "object",
+        "description": "Opaque decision state; the internals are OPEN (§58)."
+      }
+    },
+    "required": ["state"]
+  },
+  "output": {
+    "type": "object",
+    "description": "The typed routing decision.",
+    "properties": {
+      "route": {
+        "type": "string"
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "required": ["route", "confidence"]
+  },
+  "capabilities": ["models.structured-decision", "models.escalation"],
+  "resources": {
+    "os": ["linux"],
+    "arch": ["x86_64"],
+    "cpu": {
+      "cores": 1
+    },
+    "ram": "256MiB",
+    "disk": "50MiB"
+  },
+  "executionLocation": "local",
+  "fallback": "When the router or its host is unavailable, abstain and let the caller choose a generative capability.",
+  "version": "1.0.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-router:1.0.0"
+  },
+  "router": {
+    "outputs": ["route", "confidence", "abstain"],
+    "thresholds": {
+      "minConfidence": 0.6
+    },
+    "fallback": "Escalate to a generative capability when confidence is below the threshold.",
+    "escalation": "models.text-generation"
+  }
+}

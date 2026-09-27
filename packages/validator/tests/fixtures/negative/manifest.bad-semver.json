@@ -1,0 +1,9 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "demo-harness",
+    "version": "1.2"
+  },
+  "spec": {}
+}

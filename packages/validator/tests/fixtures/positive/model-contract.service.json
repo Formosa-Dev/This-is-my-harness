@@ -1,0 +1,49 @@
+{
+  "input": {
+    "type": "object",
+    "description": "The inference request the remote service model receives.",
+    "properties": {
+      "prompt": {
+        "type": "string"
+      }
+    },
+    "required": ["prompt"]
+  },
+  "output": {
+    "type": "object",
+    "description": "The typed completion the remote service model emits.",
+    "properties": {
+      "text": {
+        "type": "string"
+      }
+    },
+    "required": ["text"]
+  },
+  "capabilities": ["models.text-generation"],
+  "resources": {
+    "os": ["linux"],
+    "arch": ["x86_64"],
+    "cpu": {
+      "cores": 1
+    },
+    "ram": "512MiB",
+    "disk": "100MiB"
+  },
+  "executionLocation": "remote",
+  "lifecycle": {
+    "install": "Provision the remote service endpoint and register the model reference.",
+    "start": "Start the remote service and wait for it to accept requests.",
+    "healthCheck": "Poll the service health endpoint until it reports ready.",
+    "stop": "Stop the remote service gracefully.",
+    "update": "Roll the remote service to the pinned model version.",
+    "remove": "Deregister the model reference and release the remote resources."
+  },
+  "fallback": "When the remote service is unavailable, abstain and defer to a local model.",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-service-model:1.0.0"
+  }
+}

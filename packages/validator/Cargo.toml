@@ -11,6 +11,13 @@ publish.workspace = true
 jsonschema.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde-saphyr.workspace = true
+
+[build-dependencies]
+# `build.rs` reads `schemas/registry.json` to generate the embedded
+# `$id` -> schema table. `serde_json` is already a workspace dependency; this
+# build-time use does not link it into the library.
+serde_json.workspace = true
 
 # windows-gnu stopgap pins (Q13). Declared as direct dependencies so the
 # resolver is forced onto the non-`raw-dylib` versions of these transitive

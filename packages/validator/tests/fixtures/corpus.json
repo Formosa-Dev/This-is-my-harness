@@ -1,0 +1,163 @@
+{
+  "$comment": "NON-NORMATIVE validation corpus for harness-schema-v1alpha1 (L1, ajv Draft 2020-12). A positive entry MUST validate against its schema; a negative entry MUST fail with the expected {path, keyword}. Instances live under this change folder. Wired incrementally in PR 3+.",
+  "positive": [
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "positive/manifest.minimal.yaml"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "positive/manifest.rich.yaml"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "positive/model-contract.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "positive/router.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "positive/model-contract.service.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "positive/install-plan.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "positive/install-plan.conflict-resolution.json"
+    }
+  ],
+  "negative": [
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.missing-apiversion.json",
+      "expect": {
+        "path": "",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.unknown-toplevel.json",
+      "expect": {
+        "path": "",
+        "keyword": "unevaluatedProperties"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.unknown-metadata.json",
+      "expect": {
+        "path": "/metadata",
+        "keyword": "unevaluatedProperties"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.bad-slug.json",
+      "expect": {
+        "path": "/metadata/name",
+        "keyword": "pattern"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.bad-semver.json",
+      "expect": {
+        "path": "/metadata/version",
+        "keyword": "pattern"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.wrong-type-metadata.json",
+      "expect": {
+        "path": "/metadata",
+        "keyword": "type"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.aggregate-root.json",
+      "expect": {
+        "path": "",
+        "keyword": "type"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.unknown-apiversion.json",
+      "expect": {
+        "path": "/apiVersion",
+        "keyword": "const"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "negative/manifest.unknown-kind.json",
+      "expect": {
+        "path": "/kind",
+        "keyword": "enum"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "negative/model-contract.name-only.json",
+      "expect": {
+        "path": "",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "negative/model-contract.bad-execution-location.json",
+      "expect": {
+        "path": "/executionLocation",
+        "keyword": "enum"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "negative/model-contract.partial-lifecycle.json",
+      "expect": {
+        "path": "/lifecycle",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "negative/install-plan.missing-field.json",
+      "expect": {
+        "path": "",
+        "keyword": "required"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "negative/install-plan.env-value.json",
+      "expect": {
+        "path": "/environmentVariableNames/0",
+        "keyword": "pattern"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "negative/install-plan.hooks-inline.json",
+      "expect": {
+        "path": "/hooks/0",
+        "keyword": "unevaluatedProperties"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "negative/install-plan.timestamp.json",
+      "expect": {
+        "path": "",
+        "keyword": "unevaluatedProperties"
+      }
+    }
+  ]
+}

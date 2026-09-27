@@ -1,0 +1,10 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "demo-harness",
+    "version": "1.0.0",
+    "unknownField": "not defined by the schema"
+  },
+  "spec": {}
+}

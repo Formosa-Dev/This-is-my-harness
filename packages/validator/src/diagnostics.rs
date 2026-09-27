@@ -1,0 +1,327 @@
+//! Typed diagnostics contract (design §5, spec "Typed, stable diagnostics").
+//!
+//! Every issue is `Diagnostic { severity, path, code, message }`:
+//!   * `path` is a JSON Pointer identical to the ajv `instancePath` (`""` is the
+//!     document root), so the frozen corpus `expect` blocks stay golden;
+//!   * `code` is drawn from the validator's **own** namespace and never leaks a
+//!     raw library keyword;
+//!   * `message` is human-facing and **never** normative.
+//!
+//! Ordering is total and deterministic: layer, then severity (errors before
+//! warnings), then JSON Pointer, then `code`, then `message`.
+
+use std::fmt;
+
+/// Errors before warnings (the derived ordering places `Error` first).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Severity {
+    Error,
+    Warning,
+}
+
+/// The validator's own, stable diagnostic-code namespace.
+///
+/// A code is an interned `&'static str`; constructors exist for every code the
+/// validator can emit, and JSON Schema keywords are mapped via
+/// [`Code::schema_keyword`]. Keywords outside the map fall back to
+/// `schema.other`, so a library string can never become a code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Code(&'static str);
+
+impl Code {
+    #[must_use]
+    pub const fn new(code: &'static str) -> Self {
+        Code(code)
+    }
+
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        self.0
+    }
+
+    // --- parse.* --------------------------------------------------------
+    #[must_use]
+    pub const fn parse_invalid() -> Self {
+        Code("parse.invalid")
+    }
+    #[must_use]
+    pub const fn parse_duplicate_key() -> Self {
+        Code("parse.duplicate_key")
+    }
+    #[must_use]
+    pub const fn parse_multiple_documents() -> Self {
+        Code("parse.multiple_documents")
+    }
+
+    // --- document.* -----------------------------------------------------
+    #[must_use]
+    pub const fn document_unknown_kind() -> Self {
+        Code("document.unknown_kind")
+    }
+    #[must_use]
+    pub const fn document_kind_ambiguous() -> Self {
+        Code("document.kind_ambiguous")
+    }
+
+    // --- schema.* -------------------------------------------------------
+    #[must_use]
+    pub const fn schema_unresolved_ref() -> Self {
+        Code("schema.unresolved_ref")
+    }
+    #[must_use]
+    pub const fn schema_other() -> Self {
+        Code("schema.other")
+    }
+
+    /// Map a JSON Schema keyword to this validator's stable `schema.*` code.
+    #[must_use]
+    pub fn schema_keyword(keyword: &str) -> Self {
+        let code = match keyword {
+            "required" => "schema.required",
+            "type" => "schema.type",
+            "pattern" => "schema.pattern",
+            "enum" => "schema.enum",
+            "const" => "schema.const",
+            "unevaluatedProperties" => "schema.unevaluatedProperties",
+            "additionalProperties" => "schema.additionalProperties",
+            "unevaluatedItems" => "schema.unevaluatedItems",
+            "additionalItems" => "schema.additionalItems",
+            "minItems" => "schema.minItems",
+            "maxItems" => "schema.maxItems",
+            "uniqueItems" => "schema.uniqueItems",
+            "contains" => "schema.contains",
+            "minLength" => "schema.minLength",
+            "maxLength" => "schema.maxLength",
+            "minimum" => "schema.minimum",
+            "maximum" => "schema.maximum",
+            "exclusiveMinimum" => "schema.exclusiveMinimum",
+            "exclusiveMaximum" => "schema.exclusiveMaximum",
+            "multipleOf" => "schema.multipleOf",
+            "minProperties" => "schema.minProperties",
+            "maxProperties" => "schema.maxProperties",
+            "propertyNames" => "schema.propertyNames",
+            "anyOf" => "schema.anyOf",
+            "oneOf" => "schema.oneOf",
+            "not" => "schema.not",
+            "format" => "schema.format",
+            "contentEncoding" => "schema.contentEncoding",
+            "contentMediaType" => "schema.contentMediaType",
+            "falseSchema" => "schema.falseSchema",
+            _ => "schema.other",
+        };
+        Code(code)
+    }
+}
+
+impl fmt::Display for Code {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+/// Layer rank used by the deterministic ordering (spec layer order:
+/// structural, version, semantic, capability, filesystem). `parse`/`document`
+/// run before any layer; `io`/`usage` are pre-validation failures.
+fn layer_rank(code: &str) -> u8 {
+    if code.starts_with("parse.")
+        || code.starts_with("document.")
+        || code.starts_with("io.")
+        || code.starts_with("usage.")
+    {
+        0
+    } else if code.starts_with("schema.") {
+        1
+    } else if code.starts_with("version.") {
+        2
+    } else if code.starts_with("semantic.") {
+        3
+    } else if code.starts_with("capability.") {
+        4
+    } else if code.starts_with("path.") {
+        5
+    } else {
+        9
+    }
+}
+
+/// A single typed diagnostic.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Diagnostic {
+    pub severity: Severity,
+    pub path: String,
+    pub code: Code,
+    pub message: String,
+}
+
+impl Diagnostic {
+    #[must_use]
+    pub fn error(path: impl Into<String>, code: Code, message: impl Into<String>) -> Self {
+        Diagnostic {
+            severity: Severity::Error,
+            path: path.into(),
+            code,
+            message: message.into(),
+        }
+    }
+
+    #[must_use]
+    pub fn warning(path: impl Into<String>, code: Code, message: impl Into<String>) -> Self {
+        Diagnostic {
+            severity: Severity::Warning,
+            path: path.into(),
+            code,
+            message: message.into(),
+        }
+    }
+
+    fn sort_key(&self) -> (u8, Severity, &str, &str, &str) {
+        (
+            layer_rank(self.code.as_str()),
+            self.severity,
+            self.path.as_str(),
+            self.code.as_str(),
+            self.message.as_str(),
+        )
+    }
+}
+
+impl Ord for Diagnostic {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.sort_key().cmp(&other.sort_key())
+    }
+}
+
+impl PartialOrd for Diagnostic {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// Overall outcome of a validation run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Status {
+    /// No error diagnostics.
+    Valid,
+    /// At least one evaluated-and-failing diagnostic.
+    Invalid,
+    /// Cannot evaluate the document (parse/document/io/usage/unresolved `$ref`).
+    Error,
+}
+
+/// A validation report: status plus deterministically ordered diagnostics.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Report {
+    pub status: Status,
+    pub errors: Vec<Diagnostic>,
+    pub warnings: Vec<Diagnostic>,
+}
+
+/// A diagnostic that means "cannot evaluate" rather than "evaluated and failed".
+fn is_fatal(code: &str) -> bool {
+    code.starts_with("parse.")
+        || code.starts_with("document.")
+        || code.starts_with("io.")
+        || code.starts_with("usage.")
+        || code == "schema.unresolved_ref"
+}
+
+impl Report {
+    /// Build a report from diagnostics: sort deterministically, split
+    /// errors/warnings, and derive the status.
+    #[must_use]
+    pub fn from_diagnostics(mut diagnostics: Vec<Diagnostic>) -> Self {
+        diagnostics.sort();
+        let errors: Vec<Diagnostic> = diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .cloned()
+            .collect();
+        let warnings: Vec<Diagnostic> = diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Warning)
+            .cloned()
+            .collect();
+        let status = if errors.is_empty() {
+            Status::Valid
+        } else if errors.iter().any(|d| is_fatal(d.code.as_str())) {
+            Status::Error
+        } else {
+            Status::Invalid
+        };
+        Report {
+            status,
+            errors,
+            warnings,
+        }
+    }
+
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.status == Status::Valid
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn errors_precede_warnings_then_path_then_code() {
+        let mut diagnostics = [
+            Diagnostic::warning("/z", Code::schema_other(), "w"),
+            Diagnostic::error("/b", Code::schema_keyword("type"), "b"),
+            Diagnostic::error("/a", Code::schema_other(), "a2"),
+            Diagnostic::error("/a", Code::schema_keyword("required"), "a1"),
+        ];
+        diagnostics.sort();
+        let keys: Vec<(Severity, &str, &str)> = diagnostics
+            .iter()
+            .map(|d| (d.severity, d.path.as_str(), d.code.as_str()))
+            .collect();
+        assert_eq!(
+            keys,
+            vec![
+                // same path `/a`: `schema.other` sorts before `schema.required`
+                (Severity::Error, "/a", "schema.other"),
+                (Severity::Error, "/a", "schema.required"),
+                (Severity::Error, "/b", "schema.type"),
+                (Severity::Warning, "/z", "schema.other"),
+            ]
+        );
+    }
+
+    #[test]
+    fn schema_keyword_falls_back_to_schema_other() {
+        assert_eq!(Code::schema_keyword("required").as_str(), "schema.required");
+        assert_eq!(
+            Code::schema_keyword("unevaluatedProperties").as_str(),
+            "schema.unevaluatedProperties"
+        );
+        assert_eq!(
+            Code::schema_keyword("madeUpKeyword").as_str(),
+            "schema.other"
+        );
+    }
+
+    #[test]
+    fn fatal_codes_produce_error_status() {
+        let report =
+            Report::from_diagnostics(vec![Diagnostic::error("", Code::parse_invalid(), "bad")]);
+        assert_eq!(report.status, Status::Error);
+
+        let report = Report::from_diagnostics(vec![Diagnostic::error(
+            "/metadata/name",
+            Code::schema_keyword("pattern"),
+            "bad",
+        )]);
+        assert_eq!(report.status, Status::Invalid);
+
+        let report = Report::from_diagnostics(vec![Diagnostic::warning(
+            "/x",
+            Code::schema_other(),
+            "warn",
+        )]);
+        assert_eq!(report.status, Status::Valid);
+        assert_eq!(report.warnings.len(), 1);
+    }
+}

@@ -1,0 +1,6 @@
+apiVersion: thisismyharness.dev/v1alpha1
+kind: Harness
+metadata:
+  name: minimal-harness
+  version: 0.1.0
+spec: {}

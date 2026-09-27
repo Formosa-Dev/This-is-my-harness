@@ -1,0 +1,35 @@
+{
+  "input": {
+    "type": "object",
+    "description": "The decision state the service model receives."
+  },
+  "output": {
+    "type": "object",
+    "description": "The typed decision the service model emits."
+  },
+  "capabilities": ["models.structured-decision"],
+  "resources": {
+    "os": ["linux"],
+    "arch": ["x86_64"],
+    "cpu": {
+      "cores": 1
+    },
+    "ram": "512MiB",
+    "disk": "100MiB"
+  },
+  "executionLocation": "local",
+  "lifecycle": {
+    "install": "Install the local service.",
+    "start": "Start the local service.",
+    "healthCheck": "Check the local service health.",
+    "stop": "Stop the local service.",
+    "update": "Update the local service."
+  },
+  "fallback": "Abstain when the service model is unavailable.",
+  "version": "1.0.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-service-model:1.0.0"
+  }
+}

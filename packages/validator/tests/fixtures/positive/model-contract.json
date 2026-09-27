@@ -1,0 +1,47 @@
+{
+  "input": {
+    "type": "object",
+    "description": "The decision state the model receives.",
+    "properties": {
+      "state": {
+        "type": "object",
+        "description": "Opaque decision state; the internals are OPEN (§58)."
+      }
+    },
+    "required": ["state"]
+  },
+  "output": {
+    "type": "object",
+    "description": "The typed decision the model emits.",
+    "properties": {
+      "route": {
+        "type": "string"
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "required": ["route", "confidence"]
+  },
+  "capabilities": ["models.structured-decision"],
+  "resources": {
+    "os": ["linux", "macos", "windows"],
+    "arch": ["x86_64", "arm64"],
+    "cpu": {
+      "cores": 1
+    },
+    "ram": "512MiB",
+    "disk": "100MiB"
+  },
+  "executionLocation": "local",
+  "fallback": "When the model or its host is unavailable, emit an abstention outcome and defer to the caller.",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-model:1.0.0"
+  }
+}

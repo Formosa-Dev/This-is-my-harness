@@ -36,26 +36,35 @@ REGISTRY_REL = "schemas/registry.json"
 
 _CHANGE_NAME = "harness-schema-v1alpha1"
 
+# The live corpus home is the promoted fixtures directory. The archived change
+# folder is retained as an audit-only fallback; the live change folder is the
+# pre-archive fallback.
+_FIXTURES_REL = "packages/validator/tests/fixtures"
 
-def _find_change_dir() -> Path:
-    """Locate the corpus folder: live under ``changes/``, or archived under ``changes/archive/``.
 
-    Hardcoding the live path silently broke this gate when the change was archived.
+def _find_corpus() -> tuple[Path, str]:
+    """Return ``(instance_base, corpus_rel)`` for the live corpus.
+
+    Prefers the promoted fixtures home, then falls back to the archived change
+    (audit) and the live change folder. Hardcoding a path silently broke this
+    gate when the change was archived, so resolution stays dynamic.
     """
-    live = ROOT / "openspec" / "changes" / _CHANGE_NAME
-    if (live / "examples" / "corpus.json").exists():
-        return live
+    promoted = ROOT / _FIXTURES_REL
+    if (promoted / "corpus.json").exists():
+        return promoted, (promoted / "corpus.json").relative_to(ROOT).as_posix()
     archive_root = ROOT / "openspec" / "changes" / "archive"
     if archive_root.is_dir():
         for entry in sorted(archive_root.iterdir()):
             if entry.is_dir() and entry.name.endswith(f"-{_CHANGE_NAME}"):
                 if (entry / "examples" / "corpus.json").exists():
-                    return entry
-    return live
+                    return entry, (entry / "examples" / "corpus.json").relative_to(ROOT).as_posix()
+    live = ROOT / "openspec" / "changes" / _CHANGE_NAME
+    if (live / "examples" / "corpus.json").exists():
+        return live, (live / "examples" / "corpus.json").relative_to(ROOT).as_posix()
+    return promoted, (promoted / "corpus.json").relative_to(ROOT).as_posix()
 
 
-CHANGE_DIR = _find_change_dir()
-CORPUS_REL = (CHANGE_DIR / "examples" / "corpus.json").relative_to(ROOT).as_posix()
+CHANGE_DIR, CORPUS_REL = _find_corpus()
 
 
 def load_json(path: Path):

@@ -19,26 +19,33 @@ import YAML from "yaml";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..");
-// The corpus folder starts live under `changes/` and is later moved under
-// `changes/archive/`. Resolve it dynamically so this gate keeps working after
-// the change is archived (hardcoding the path silently broke the gate once).
+// The live corpus home is the promoted fixtures directory
+// (packages/validator/tests/fixtures). The archived change folder is retained as
+// an audit-only fallback, and the live change folder is the pre-archive fallback.
+const FIXTURES_REL = "packages/validator/tests/fixtures";
 const CHANGE_NAME = "harness-schema-v1alpha1";
-function findChangeDir() {
-  const live = ["openspec", "changes", CHANGE_NAME];
-  if (existsSync(join(ROOT, ...live, "examples", "corpus.json"))) return live.join("/");
+function findCorpusBase() {
+  if (existsSync(join(ROOT, FIXTURES_REL, "corpus.json"))) {
+    return { base: FIXTURES_REL, corpus: `${FIXTURES_REL}/corpus.json` };
+  }
   const archiveRoot = join(ROOT, "openspec", "changes", "archive");
   if (existsSync(archiveRoot)) {
     for (const entry of readdirSync(archiveRoot)) {
       if (entry.endsWith(`-${CHANGE_NAME}`)) {
-        const rel = ["openspec", "changes", "archive", entry];
-        if (existsSync(join(ROOT, ...rel, "examples", "corpus.json"))) return rel.join("/");
+        const base = `openspec/changes/archive/${entry}`;
+        if (existsSync(join(ROOT, base, "examples", "corpus.json"))) {
+          return { base, corpus: `${base}/examples/corpus.json` };
+        }
       }
     }
   }
-  return live.join("/");
+  const live = `openspec/changes/${CHANGE_NAME}`;
+  if (existsSync(join(ROOT, live, "examples", "corpus.json"))) {
+    return { base: live, corpus: `${live}/examples/corpus.json` };
+  }
+  return { base: FIXTURES_REL, corpus: `${FIXTURES_REL}/corpus.json` };
 }
-const CHANGE = findChangeDir();
-const CORPUS_REL = `${CHANGE}/examples/corpus.json`;
+const { base: CORPUS_BASE, corpus: CORPUS_REL } = findCorpusBase();
 const REGISTRY_REL = "schemas/registry.json";
 
 function readJson(path) {
@@ -53,9 +60,7 @@ function loadInstance(path) {
 function resolveInstance(file) {
   const fromRoot = join(ROOT, file);
   if (existsSync(fromRoot)) return fromRoot;
-  const fromChange = join(ROOT, CHANGE, file);
-  if (existsSync(fromChange)) return fromChange;
-  return fromRoot;
+  return join(ROOT, CORPUS_BASE, file);
 }
 
 function main() {
