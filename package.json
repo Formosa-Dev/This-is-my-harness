@@ -1,0 +1,16 @@
+{
+  "name": "this-is-my-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "This is my Harness — open standard + toolchain for portable agentic systems. Schema verification harness (F2).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "validate:schemas": "node scripts/schemas/validate.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.6.1"
+  }
+}

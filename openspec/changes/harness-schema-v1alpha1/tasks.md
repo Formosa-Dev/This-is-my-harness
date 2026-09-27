@@ -32,12 +32,12 @@ Alternative chain: `feature-branch-chain` with a `harness-schema-v1alpha1` track
 
 ## Phase 1 — F2 `schemas`: verification harness + wiring (PR 1)
 
-- [ ] 1.1 Create `package.json` + lockfile (private; devDeps `ajv@^8`, `ajv-formats@^3`, `yaml@^2`; script `validate:schemas`). Files: `package.json`, `package-lock.json`. Deps: none. **Verify:** `npm install`; `npm ls ajv` → prints `ajv@8.x`.
-- [ ] 1.2 Create `schemas/registry.json` (`base` = `https://thisismyharness.dev/schemas/v1alpha1/`, empty `$id`→path map). Deps: none. **Verify:** `python -c "import json;print(json.load(open('schemas/registry.json'))['base'])"` → prints the base URI.
-- [ ] 1.3 Create `scripts/schemas/check_schemas.py` (L0, stdlib only: parse; `$schema` = 2020-12; every `$ref` ∈ registry and on disk; vendor scan of `const`/`enum`; §58 OPEN markers; README anchors; cycle check). Deps: 1.2. **Verify:** `python scripts/schemas/check_schemas.py` → exit 1, `FAIL missing: schemas/harness.v1alpha1.schema.json` (RED).
-- [ ] 1.4 Create `scripts/schemas/validate.mjs` (ajv `dist/2020`, YAML+JSON load, corpus-driven) + `openspec/changes/harness-schema-v1alpha1/examples/corpus.json` (empty lists). Deps: 1.1. **Verify:** `npm run validate:schemas` → exit 1, `FAIL corpus empty: positive=0` (RED).
-- [ ] 1.5 **Adversarial (pairs 1.3):** add `--self-test` to `check_schemas.py` with fixtures for vendor `const`, unresolved `$ref`, missing OPEN marker, forced cycle. Deps: 1.3. **Verify:** `python scripts/schemas/check_schemas.py --self-test` → `SELFTEST OK cases=4` exit 0.
-- [ ] 1.6 Draft `schemas/README.md`: dialect, `$id` map, resolver map, strictness table, §58 OPEN table, semantic-boundary list (F2-05..12 owner per row), Install-Plan local-only note. Deps: 1.2. **Verify:** `python scripts/schemas/check_schemas.py --readme` → `README OK sections=7`.
+- [x] 1.1 Create `package.json` + lockfile (private; devDeps `ajv@^8`, `ajv-formats@^3`, `yaml@^2`; script `validate:schemas`). Files: `package.json`, `package-lock.json`. Deps: none. **Verify:** `npm install`; `npm ls ajv` → prints `ajv@8.x`. @2026-09-26
+- [x] 1.2 Create `schemas/registry.json` (`base` = `https://thisismyharness.dev/schemas/v1alpha1/`, empty `$id`→path map). Deps: none. **Verify:** `python -c "import json;print(json.load(open('schemas/registry.json'))['base'])"` → prints the base URI. @2026-09-26
+- [x] 1.3 Create `scripts/schemas/check_schemas.py` (L0, stdlib only: parse; `$schema` = 2020-12; every `$ref` ∈ registry and on disk; vendor scan of `const`/`enum`; §58 OPEN markers; README anchors; cycle check). Deps: 1.2. **Verify:** `python scripts/schemas/check_schemas.py` → exit 1, `FAIL missing: schemas/harness.v1alpha1.schema.json` (RED). @2026-09-26
+- [x] 1.4 Create `scripts/schemas/validate.mjs` (ajv `dist/2020`, YAML+JSON load, corpus-driven) + `openspec/changes/harness-schema-v1alpha1/examples/corpus.json` (empty lists). Deps: 1.1. **Verify:** `npm run validate:schemas` → exit 1, `FAIL corpus empty: positive=0` (RED). @2026-09-26
+- [x] 1.5 **Adversarial (pairs 1.3):** add `--self-test` to `check_schemas.py` with fixtures for vendor `const`, unresolved `$ref`, missing OPEN marker, forced cycle. Deps: 1.3. **Verify:** `python scripts/schemas/check_schemas.py --self-test` → `SELFTEST OK cases=4` exit 0. @2026-09-26
+- [x] 1.6 Draft `schemas/README.md`: dialect, `$id` map, resolver map, strictness table, §58 OPEN table, semantic-boundary list (F2-05..12 owner per row), Install-Plan local-only note. Deps: 1.2. **Verify:** `python scripts/schemas/check_schemas.py --readme` → `README OK sections=7`. @2026-09-26
 
 ## Phase 2 — F2 `schemas`: shared `$defs` (PR 2)
 

@@ -1,0 +1,5 @@
+{
+  "$comment": "NON-NORMATIVE validation corpus for harness-schema-v1alpha1 (L1, ajv Draft 2020-12). Entries are wired in later work units (PR 3+); this file is intentionally empty in PR 1 so the runner is provably RED before any schema exists.",
+  "positive": [],
+  "negative": []
+}
