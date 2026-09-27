@@ -33,8 +33,29 @@ from referencing.jsonschema import DRAFT202012
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_REL = "schemas/registry.json"
-CHANGE_DIR = ROOT / "openspec" / "changes" / "harness-schema-v1alpha1"
-CORPUS_REL = "openspec/changes/harness-schema-v1alpha1/examples/corpus.json"
+
+_CHANGE_NAME = "harness-schema-v1alpha1"
+
+
+def _find_change_dir() -> Path:
+    """Locate the corpus folder: live under ``changes/``, or archived under ``changes/archive/``.
+
+    Hardcoding the live path silently broke this gate when the change was archived.
+    """
+    live = ROOT / "openspec" / "changes" / _CHANGE_NAME
+    if (live / "examples" / "corpus.json").exists():
+        return live
+    archive_root = ROOT / "openspec" / "changes" / "archive"
+    if archive_root.is_dir():
+        for entry in sorted(archive_root.iterdir()):
+            if entry.is_dir() and entry.name.endswith(f"-{_CHANGE_NAME}"):
+                if (entry / "examples" / "corpus.json").exists():
+                    return entry
+    return live
+
+
+CHANGE_DIR = _find_change_dir()
+CORPUS_REL = (CHANGE_DIR / "examples" / "corpus.json").relative_to(ROOT).as_posix()
 
 
 def load_json(path: Path):

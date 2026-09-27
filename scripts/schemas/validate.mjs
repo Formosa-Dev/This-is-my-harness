@@ -9,7 +9,7 @@
 // Usage: npm run validate:schemas
 // Exit code is 0 when the corpus passes and 1 on the first failure.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,7 +19,25 @@ import YAML from "yaml";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..");
-const CHANGE = "openspec/changes/harness-schema-v1alpha1";
+// The corpus folder starts live under `changes/` and is later moved under
+// `changes/archive/`. Resolve it dynamically so this gate keeps working after
+// the change is archived (hardcoding the path silently broke the gate once).
+const CHANGE_NAME = "harness-schema-v1alpha1";
+function findChangeDir() {
+  const live = ["openspec", "changes", CHANGE_NAME];
+  if (existsSync(join(ROOT, ...live, "examples", "corpus.json"))) return live.join("/");
+  const archiveRoot = join(ROOT, "openspec", "changes", "archive");
+  if (existsSync(archiveRoot)) {
+    for (const entry of readdirSync(archiveRoot)) {
+      if (entry.endsWith(`-${CHANGE_NAME}`)) {
+        const rel = ["openspec", "changes", "archive", entry];
+        if (existsSync(join(ROOT, ...rel, "examples", "corpus.json"))) return rel.join("/");
+      }
+    }
+  }
+  return live.join("/");
+}
+const CHANGE = findChangeDir();
 const CORPUS_REL = `${CHANGE}/examples/corpus.json`;
 const REGISTRY_REL = "schemas/registry.json";
 
