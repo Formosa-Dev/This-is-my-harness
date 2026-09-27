@@ -18,8 +18,16 @@
       "file": "examples/positive/router.json"
     },
     {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/positive/model-contract.service.json"
+    },
+    {
       "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
       "file": "examples/positive/install-plan.json"
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/positive/install-plan.conflict-resolution.json"
     }
   ],
   "negative": [
@@ -64,6 +72,38 @@
       }
     },
     {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "examples/negative/manifest.wrong-type-metadata.json",
+      "expect": {
+        "path": "/metadata",
+        "keyword": "type"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "examples/negative/manifest.aggregate-root.json",
+      "expect": {
+        "path": "",
+        "keyword": "type"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "examples/negative/manifest.unknown-apiversion.json",
+      "expect": {
+        "path": "/apiVersion",
+        "keyword": "const"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+      "file": "examples/negative/manifest.unknown-kind.json",
+      "expect": {
+        "path": "/kind",
+        "keyword": "enum"
+      }
+    },
+    {
       "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
       "file": "examples/negative/model-contract.name-only.json",
       "expect": {
@@ -80,6 +120,14 @@
       }
     },
     {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json",
+      "file": "examples/negative/model-contract.partial-lifecycle.json",
+      "expect": {
+        "path": "/lifecycle",
+        "keyword": "required"
+      }
+    },
+    {
       "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
       "file": "examples/negative/install-plan.missing-field.json",
       "expect": {
@@ -93,6 +141,22 @@
       "expect": {
         "path": "/environmentVariableNames/0",
         "keyword": "pattern"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/negative/install-plan.hooks-inline.json",
+      "expect": {
+        "path": "/hooks/0",
+        "keyword": "unevaluatedProperties"
+      }
+    },
+    {
+      "schema": "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json",
+      "file": "examples/negative/install-plan.timestamp.json",
+      "expect": {
+        "path": "",
+        "keyword": "unevaluatedProperties"
       }
     }
   ]

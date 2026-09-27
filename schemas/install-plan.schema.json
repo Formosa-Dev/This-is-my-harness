@@ -85,7 +85,7 @@
     },
     "conflicts": {
       "type": "array",
-      "description": "Every conflict detected, with the reason. A conflict MUST NOT be resolved silently; an entry is a closed object. F1: install-protocol/README.md §4, §3.11.",
+      "description": "Every conflict detected, with the reason and, where one exists, the explicit resolution value. A conflict MUST NOT be resolved silently; an entry is a closed object. F1: install-protocol/README.md §4, §3.11.",
       "items": {
         "type": "object",
         "required": ["path", "reason"],
@@ -100,6 +100,11 @@
             "type": "string",
             "minLength": 1,
             "description": "Why the conflict was detected. A conflict MUST be reported explicitly and MUST NOT be dropped. F1: install-protocol/README.md §4, §3.11."
+          },
+          "resolution": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The explicit resolution value where one exists. A conflict MUST NOT be resolved silently: when a resolution exists it MUST be stated here rather than applied implicitly. The field is OPTIONAL because not every reported conflict has a resolution yet. F1: install-protocol/README.md §4, §3.11; core/dependencies.md §5."
           }
         }
       }
@@ -128,7 +133,7 @@
       "description": "Every required or provided capability that cannot be honored, and whether it blocks Apply. A required capability that is unsupported MUST block Apply. F1: install-protocol/README.md §4, §3.7; core/compatibility.md §2.",
       "items": {
         "type": "object",
-        "required": ["capability", "blocksApply"],
+        "required": ["capability", "blocksApply", "required"],
         "properties": {
           "capability": {
             "$ref": "https://thisismyharness.dev/schemas/v1alpha1/defs/capability.schema.json#/$defs/capabilityId",
@@ -137,6 +142,10 @@
           "blocksApply": {
             "type": "boolean",
             "description": "Whether the unsupported capability blocks Apply. A required capability that is unsupported MUST block Apply and MUST NOT be dropped silently. F1: install-protocol/README.md §3.7 rule 3."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the capability is required by the harness. An entry MUST mark this explicitly so an unsupported REQUIRED capability is never confused with an optional one; a required unsupported capability MUST block Apply. F1: install-protocol/README.md §3.7; core/compatibility.md §2."
           }
         }
       }
@@ -174,11 +183,12 @@
     },
     "hooks": {
       "type": "array",
-      "description": "Every hook or script component that would execute. Hooks and scripts are executable and carry the corresponding risk class; they MUST be enumerated in the plan before any mutation. F1: install-protocol/README.md §4, §3.9; core/permissions.md §2.1."
+      "description": "Every hook or script component that would execute. Hooks and scripts are executable and carry the corresponding risk class; they MUST be enumerated in the plan before any mutation. A hook entry is a closed REFERENCE (path, interpreter, riskClass): the plan MUST NOT contain or require the execution of third-party code, so an inline command, script body or any other undeclared field MUST be rejected. F1: install-protocol/README.md §4, §3.9; core/permissions.md §2.1."
       ,
       "items": {
         "type": "object",
         "required": ["path"],
+        "unevaluatedProperties": false,
         "properties": {
           "path": {
             "type": "string",

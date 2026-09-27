@@ -4,7 +4,7 @@
 
 ### Requirement: The Install Plan enumerates all sixteen fields
 
-The install-plan schema MUST require every field enumerated by `install-protocol/README.md` §4: runtime, runtimeVersion, project, scope, harness, files, conflicts, adaptations, unsupportedCapabilities, mcp, hooksScripts, services, environmentVariableNames, risk, snapshot and verification. A plan missing any of the sixteen MUST fail validation.
+The install-plan schema MUST require every field enumerated by `install-protocol/README.md` §4: runtime, runtimeVersion, project, scope, harness, files, conflicts, adaptations, unsupportedCapabilities, mcp, hooks, services, environmentVariableNames, risk, snapshot and verificationSteps. A plan missing any of the sixteen MUST fail validation.
 
 #### Scenario: A complete plan validates
 

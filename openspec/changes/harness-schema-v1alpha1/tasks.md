@@ -71,3 +71,16 @@ Alternative chain: `feature-branch-chain` with a `harness-schema-v1alpha1` track
 - [x] 5.3 `docs/adr/0002-schema-strategy.md` per `docs/adr/0000-template.md` (dialect, `$id`, modular defs, absolute-refs+resolver; rejected A1–A12). Deps: 4.5. **Verify:** `python scripts/schemas/check_schemas.py --adr` → `ADR OK headings=7`. @2026-09-26
 - [x] 5.4 Record R3 as a pre-freeze blocker (Rust `jsonschema` 2020-12/`unevaluatedProperties` support unverified — Rust absent here) in ADR + `README.md`; note L1/L2 parity as the interim proof. Deps: 5.1, 5.3. **Verify:** `python scripts/schemas/check_schemas.py --freeze` → `FREEZE BLOCKED r3=pending` (expected until F2-05 confirms). @2026-09-26
 - [x] 5.5 Trust statement + final three-layer gate. Deps: 5.2, 5.4. **Verify:** `python scripts/schemas/check_schemas.py` (L0), `npm run validate:schemas` (L1), `python scripts/schemas/cross_check.py` (L2) all exit 0; `--trust` → `TRUST OK` (no "100% safe"/conformance claim); evidence appended to the change. @2026-09-26
+
+## Fix pass — verify-response C1/W2/W3/W4/W5/W6/S7 (post-verify)
+
+> Fixes only the findings raised by the independent verify report. No `spec/**`, repo-root `examples/**` or `packages/**` touched. No §58 item resolved.
+
+- [x] F.1 **C1:** close the `hooks` item objects in `schemas/install-plan.schema.json` with `unevaluatedProperties: false`, so an inline `command` / `scriptBody` / `content` (or any undeclared field) is rejected. @2026-09-26
+- [x] F.2 **C1:** add negative `examples/negative/install-plan.hooks-inline.json` expecting `{path:"/hooks/0", keyword:"unevaluatedProperties"}` and wire it into `examples/corpus.json`. @2026-09-26
+- [x] F.3 **W2:** make `resolution` an OPTIONAL property on `conflicts` entries (not required) and add positive `examples/positive/install-plan.conflict-resolution.json`. @2026-09-26
+- [x] F.4 **W3:** require the `required` boolean on `unsupportedCapabilities` entries (additive to F1's `blocksApply`); update the existing positive plan fixture. @2026-09-26
+- [x] F.5 **W4:** reconcile the delta wording — `hooks` / `verificationSteps` field names; model `license` OPTIONAL, citing §58 / Q7. @2026-09-26
+- [x] F.6 **W5/W6:** add explicit rows to the `schemas/README.md` semantic-boundary table for the model-license SPDX-shape check (F2-12) and the model-vs-package license contradiction (F2-10). @2026-09-26
+- [x] F.7 **S7:** add committed corpus fixtures for the ad-hoc-only scenarios (wrong-type `metadata`, aggregate root, unknown `apiVersion`, unknown `kind`, partial service lifecycle, plan `timestamp`, remote + full service lifecycle). @2026-09-26
+- [ ] S.8/S.9 — accepted / backlog: `--freeze` exit semantics and `--trace` anchor strength are documented as known limits; no code change (see `verify-report.md`). @2026-09-26

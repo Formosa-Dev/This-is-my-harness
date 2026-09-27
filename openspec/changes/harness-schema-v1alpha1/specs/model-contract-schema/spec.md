@@ -4,7 +4,7 @@
 
 ### Requirement: A model contract is more than a name
 
-The model-contract schema MUST require the contract elements of `component-types.md` §4 / decision record §8: input contract, output contract, capabilities, resource contract, execution location, lifecycle, fallback, version, license and artifact source.
+The model-contract schema MUST require the contract elements of `component-types.md` §4 / decision record §8: input contract, output contract, capabilities, resource contract, execution location, lifecycle, fallback, version and artifact source. The model `license` element is declared as an OPTIONAL field, not a REQUIRED one: whether a model license duplicates the package license declared once in `metadata.license` is left OPEN by decision record §58 / Q7, so the schema retains the field and does not require it (see "Version and license").
 
 #### Scenario: A complete model contract validates
 
@@ -113,7 +113,7 @@ When a model runs as a service, its lifecycle MUST declare install, start, healt
 
 ### Requirement: Version and license
 
-A model contract MUST declare `version` (valid SemVer) and `license` (SPDX identifier shape). The package license is declared once according to `distribution.md` §7; a model-level license MUST NOT contradict the package license, and the consistency rule MUST be stated rather than left silent.
+A model contract MUST declare `version` (valid SemVer). `license` is OPTIONAL: the schema retains a model `license` field carrying an SPDX identifier where one exists, but whether a model license duplicates the package license declared once in `metadata.license` is OPEN (decision record §58 / Q7) and this schema does not decide that policy. Because F1 (`component-types.md` §4.8) fixes no SPDX grammar, the identifier shape is a semantic check rather than a schema pattern (listed on the semantic boundary). The package license is declared once according to `distribution.md` §7; a model-level license MUST NOT contradict the package license, and the consistency rule MUST be stated rather than left silent.
 
 #### Scenario: Version and license validate
 

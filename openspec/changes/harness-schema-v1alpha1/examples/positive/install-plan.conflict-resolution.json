@@ -1,0 +1,49 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "config/existing.json",
+      "action": "modify"
+    }
+  ],
+  "conflicts": [
+    {
+      "path": "config/existing.json",
+      "reason": "A managed file exists and differs from the target; it must not be overwritten silently.",
+      "resolution": "Keep a snapshot, then overwrite only after the user approves the computed diff."
+    }
+  ],
+  "adaptations": [],
+  "unsupportedCapabilities": [
+    {
+      "capability": "services.vector-store",
+      "blocksApply": true,
+      "required": true
+    }
+  ],
+  "mcp": [],
+  "hooks": [],
+  "services": [],
+  "environmentVariableNames": ["EXAMPLE_API_KEY"],
+  "risk": {
+    "effectiveClass": "C",
+    "autonomyLevel": 3
+  },
+  "snapshot": {
+    "id": "snap-0002",
+    "covers": ["config/existing.json"]
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm the conflict resolution was applied and reported explicitly.",
+      "kind": "conflict"
+    }
+  ]
+}

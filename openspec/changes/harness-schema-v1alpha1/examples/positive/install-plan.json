@@ -33,7 +33,8 @@
   "unsupportedCapabilities": [
     {
       "capability": "services.vector-store",
-      "blocksApply": false
+      "blocksApply": false,
+      "required": false
     }
   ],
   "mcp": [

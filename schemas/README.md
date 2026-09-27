@@ -132,6 +132,8 @@ JSON Schema is necessary but not sufficient for conformance. The checks below ca
 | Trust-label precision and declared-vs-verified compatibility | Requires conformance evidence. | F2-10 |
 | `environmentVariableNames` are names, not values | A secret value can be shaped like a name; needs a semantic scan. | F2-12 |
 | Digest / immutability semantics | Tag-to-digest and published immutability are registry behaviour. | F2-07 |
+| Model `license` SPDX identifier shape | F1 (`package/component-types.md` §4.8) fixes no SPDX grammar, so an identifier-shaped string is not schema-expressible without inventing one. | F2-12 |
+| Model `license` vs package `metadata.license` contradiction (Q7) | Whether a model license duplicates the package license declared once is OPEN (§58 / Q7); the schema retains an optional model `license` and decides no duplicate-declaration rule. | F2-10 |
 
 ## Install Plan is local-only
 
