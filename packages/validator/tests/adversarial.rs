@@ -318,3 +318,138 @@ fn positive_corpus_has_no_semantic_errors() {
         );
     }
 }
+
+// --- WU4 capability + version layers (tasks 4.1-4.5) ------------------------
+//
+// The capability registry is embedded at build time; the version gate supersedes
+// the structural layer on `/apiVersion` (one issue, one code) and classifies an
+// unsupported generation as evaluated-and-invalid (Q9: exit-1 semantics).
+
+#[test]
+fn unknown_capability_is_an_explicit_error() {
+    let bytes = read_fixture("negative/capability.unknown.json");
+    let value = harness_validator::parse::parse(&bytes, Format::Json)
+        .unwrap_or_else(|diagnostic| panic!("cannot parse fixture: {diagnostic:?}"));
+    let diagnostics = harness_validator::capability::validate(Kind::Manifest, &value)
+        .expect("the embedded known-capability registry must load");
+    let report = Report::from_diagnostics(diagnostics);
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(
+        has_error(
+            &report,
+            "/spec/requirements/modelCapabilities/0/capability",
+            "capability.unknown"
+        ),
+        "got {report:?}"
+    );
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|d| d.message.contains("models.definitely-not-registered")),
+        "the diagnostic must name the identifier: {report:?}"
+    );
+}
+
+#[test]
+fn missing_capabilities_registry_fails_loudly() {
+    // No registry available: the loader must fail even though the document
+    // declares a capability. It must never treat the identifier as known.
+    let value = serde_json::json!({
+        "spec": { "requirements": { "modelCapabilities": [ { "capability": "models.text-generation" } ] } }
+    });
+    let error = harness_validator::capability::validate_with_source(None, Kind::Manifest, &value)
+        .expect_err("a missing registry must fail loudly");
+    assert!(error.message().contains("missing"), "got {error:?}");
+
+    assert!(
+        harness_validator::capability::parse_registry(Some("{}")).is_err(),
+        "a registry with no capability set must fail loudly"
+    );
+}
+
+#[test]
+fn unsupported_api_version_is_version_unsupported_and_invalid() {
+    let report = harness_validator::validate_structural_and_version(
+        HARNESS_ID,
+        br#"{"apiVersion":"thisismyharness.dev/v2alpha1","kind":"Harness","metadata":{"name":"x","version":"1.0.0"},"spec":{}}"#,
+        Format::Json,
+    );
+    // Q9: evaluated & invalid (exit-1 semantics), never cannot-evaluate.
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    let version_codes: Vec<&str> = report
+        .errors
+        .iter()
+        .map(|d| d.code.as_str())
+        .filter(|code| code.starts_with("version."))
+        .collect();
+    assert_eq!(version_codes, vec!["version.unsupported"], "got {report:?}");
+    assert!(has_error(&report, "/apiVersion", "version.unsupported"));
+    assert!(
+        !report
+            .errors
+            .iter()
+            .any(|d| d.code.as_str() == "schema.const"),
+        "the structural const on /apiVersion must be suppressed: {report:?}"
+    );
+}
+
+#[test]
+fn missing_api_version_is_version_missing_and_invalid() {
+    let report = harness_validator::validate_structural_and_version(
+        HARNESS_ID,
+        br#"{"kind":"Harness","metadata":{"name":"x","version":"1.0.0"},"spec":{}}"#,
+        Format::Json,
+    );
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(has_error(&report, "/apiVersion", "version.missing"));
+    assert!(
+        !report
+            .errors
+            .iter()
+            .any(|d| d.code.as_str() == "schema.required" && d.path.is_empty()),
+        "the superseded required on /apiVersion must be suppressed: {report:?}"
+    );
+}
+
+#[test]
+fn supported_api_version_passes_the_version_gate() {
+    let bytes = read_fixture("positive/manifest.minimal.yaml");
+    let report =
+        harness_validator::validate_structural_and_version(HARNESS_ID, &bytes, Format::Yaml);
+    assert_eq!(report.status, Status::Valid, "got {report:?}");
+    assert!(!report
+        .errors
+        .iter()
+        .any(|d| d.code.as_str().starts_with("version.")));
+}
+
+#[test]
+fn positive_corpus_capabilities_are_all_known() {
+    let raw = std::fs::read_to_string(fixtures_dir().join("corpus.json"))
+        .expect("the promoted corpus must be readable");
+    let corpus: CorpusPositives = serde_json::from_str(&raw).expect("corpus must parse");
+
+    let mut checked = 0;
+    for entry in &corpus.positive {
+        let bytes = read_fixture(&entry.file);
+        let value = harness_validator::parse::parse(&bytes, Format::from_filename(&entry.file))
+            .unwrap_or_else(|diagnostic| panic!("cannot parse {}: {diagnostic:?}", entry.file));
+        let kind = match harness_validator::document::detect(&value) {
+            harness_validator::Detection::Known(kind) => kind,
+            other => panic!("{}: expected a known kind, got {other:?}", entry.file),
+        };
+        checked += harness_validator::capability::declared_capabilities(kind, &value).len();
+        let diagnostics = harness_validator::capability::validate(kind, &value)
+            .expect("the embedded registry must load");
+        assert!(
+            diagnostics.is_empty(),
+            "{}: unexpected capability errors {diagnostics:?}",
+            entry.file
+        );
+    }
+    assert!(
+        checked > 0,
+        "the positive corpus must exercise at least one declared capability"
+    );
+}

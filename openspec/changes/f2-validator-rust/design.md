@@ -34,8 +34,8 @@ Directions: `harness → harness-validator`; `harness-core → harness-validator
 | `src/structural.rs` | L1 — JSON Schema layer; maps `jsonschema` errors → `{path, code}`. |
 | `src/semantic/mod.rs` | Orchestrates the document-local rules and short-circuit policy. |
 | `src/semantic/{identity,dependencies,components,permissions}.rs` | Cross-section rules (see §4). |
-| `src/capability.rs` | L3 — known-capability lookup. |
-| `src/version.rs` | L4 — supported `apiVersion` set + migration stub. |
+| `src/capability.rs` | capability layer — known-capability lookup (embedded registry, F2-07). |
+| `src/version.rs` | version layer — supported `apiVersion` set + migration stub (F2-11). |
 | `src/pathsafe.rs` | L5 — declared-path safety (`..`, absolute, symlink escape). **Added** to the exploration map because L-filesystem needs a home. |
 | `tests/corpus.rs` | Drives the promoted fixture corpus (primary gate). |
 | `tests/{adversarial.rs,cli.rs}` | Adversarial inputs; `assert_cmd` CLI smoke + golden `--json`. |
@@ -48,24 +48,24 @@ Directions: `harness → harness-validator`; `harness-core → harness-validator
 
 ## 4. Validation layers — authoritative IN/PARTIAL/OUT matrix
 
-Layer **ownership** order: L1 structural → L2 semantic → L3 capability → L4 version → L5 filesystem. Every `schemas/README.md` semantic-boundary row maps to **exactly one** layer/task:
+Layer order (spec-normative): **structural → version → semantic → capability → filesystem**. Every `schemas/README.md` semantic-boundary row maps to **exactly one** layer/task:
 
 | # | Semantic-boundary row | Layer | Task | Scope | Notes |
 |---|---|---|---|---|---|
-| 1 | Supported `apiVersion` set + migration map | L4 version | F2-11 | **IN** | supported `{thisismyharness.dev/v1alpha1}`; static `Migration::None` stub; §58 OPEN |
-| 2 | Unknown `kind` unless compatible extension present | L2 document | F2-06 | **PARTIAL** | v1alpha1 `kind` is a closed structural enum; extension-kind lookup needs a registry → F4 |
-| 3 | Reference resolution (scoped refs, digest) | L2 identity | F2-06 | **PARTIAL** | ref grammar + host consistency + short-ref-forbidden now; digest/network → F4/F7 |
-| 4 | Dependency-graph analysis (cycles, conflicts, duplicate identity) | L2 dependencies | F2-06 | **PARTIAL** | ordered `extends`, kind-composition, self/known-set cycle now; full resolver → F4 |
-| 5 | Permission coverage above Passive | L2 permissions | F2-06 | **IN** | every non-Passive component/permission declared |
-| 6 | Effective risk, monotonicity, autonomy floor | L2 permissions | F2-05/06 | **IN** | effective = max over parts; autonomy ≥ floor(risk) |
-| 7 | Capability existence vs extension registry | L3 capability | F2-07 | **IN** | needs known-capability source (Q6); unknown → explicit code |
-| 8 | Package discovery, path safety, symlink containment | L5 filesystem | F2-08 | **PARTIAL** | declared-path traversal now; tree discovery/symlink escape on a real tree → F4 |
+| 1 | Supported `apiVersion` set + migration map | version | F2-11 | **IN** | supported `{thisismyharness.dev/v1alpha1}`; static `Migration::None` stub; §58 OPEN |
+| 2 | Unknown `kind` unless compatible extension present | document | F2-06 | **PARTIAL** | v1alpha1 `kind` is a closed structural enum; extension-kind lookup needs a registry → F4 |
+| 3 | Reference resolution (scoped refs, digest) | semantic (identity) | F2-06 | **PARTIAL** | ref grammar + host consistency + short-ref-forbidden now; digest/network → F4/F7 |
+| 4 | Dependency-graph analysis (cycles, conflicts, duplicate identity) | semantic (dependencies) | F2-06 | **PARTIAL** | ordered `extends`, kind-composition, self/known-set cycle now; full resolver → F4 |
+| 5 | Permission coverage above Passive | semantic (permissions) | F2-06 | **IN** | every non-Passive component/permission declared |
+| 6 | Effective risk, monotonicity, autonomy floor | semantic (permissions) | F2-05/06 | **IN** | effective = max over parts; autonomy ≥ floor(risk) |
+| 7 | Capability existence vs extension registry | capability | F2-07 | **IN** | needs known-capability source (Q6); unknown → explicit code |
+| 8 | Package discovery, path safety, symlink containment | filesystem | F2-08 | **PARTIAL** | declared-path traversal now; tree discovery/symlink escape on a real tree → F4 |
 | 9 | Install-Plan determinism + binding to inputs | — | — | **OUT → F4** | document *shape* is L1; determinism is a generator property |
 | 10 | Trust-label precision / declared-vs-verified | — | — | **OUT → F7/F15** | needs conformance evidence |
-| 11 | `environmentVariableNames` names, not values | L2 components | F2-06/F2-12 | **IN** | structural `pattern` rejects `KEY=value`; add value-like heuristic |
+| 11 | `environmentVariableNames` names, not values | semantic (components) | F2-06/F2-12 | **IN** | structural `pattern` rejects `KEY=value`; add value-like heuristic |
 | 12 | Digest / immutability semantics | — | — | **OUT → F7** | registry behaviour |
-| 13 | Model `license` SPDX identifier shape | L2 components | F2-12 | **IN** | F1 fixes no grammar → documented heuristic, marked OPEN (Q7/§58) |
-| 14 | Model `license` vs package `metadata.license` (Q7) | L2 components | F2-10 | **PARTIAL** | checked when both instances provided; else `semantic.not_evaluated` warning, never guessed |
+| 13 | Model `license` SPDX identifier shape | semantic (components) | F2-12 | **IN** | F1 fixes no grammar → documented heuristic, marked OPEN (Q7/§58) |
+| 14 | Model `license` vs package `metadata.license` (Q7) | semantic (components) | F2-10 | **PARTIAL** | checked when both instances provided; else `semantic.not_evaluated` warning, never guessed |
 
 This matrix **supersedes** the `schemas/README.md` "Owner" column, whose task numbers contradict `build-progress/F2` (e.g. it assigns path-safety to F2-08, the CLI task). Apply publishes this one matrix in `schemas/README.md` + `packages/validator/README.md`.
 
@@ -77,9 +77,9 @@ This matrix **supersedes** the `schemas/README.md` "Owner" column, whose task nu
 
 | Prefix | Codes |
 |---|---|
-| `parse.` | `invalid`, `duplicate_key`, `multi_document` |
-| `document.` | `kind_unknown`, `kind_ambiguous` |
-| `schema.` | one per mapped JSON Schema keyword: `required`, `type`, `pattern`, `enum`, `const`, `unevaluatedProperties`, `minItems`, `anyOf`, `oneOf`, `format`, `minimum`, `maximum` |
+| `parse.` | `invalid`, `duplicate_key`, `multiple_documents` |
+| `document.` | `unknown_kind`, `kind_ambiguous` |
+| `schema.` | `unresolved_ref` (an unresolvable offline `$ref`), plus one per mapped JSON Schema keyword: `required`, `type`, `pattern`, `enum`, `const`, `unevaluatedProperties`, `minItems`, `anyOf`, `oneOf`, `format`, `minimum`, `maximum` |
 | `semantic.` | `identity_ref_short_forbidden`, `identity_host_mismatch`, `kind_composition`, `dependency_cycle`, `dependency_order`, `permission_coverage`, `effective_risk`, `autonomy_below_floor`, `env_value_like`, `license_shape`, `license_conflict`, `not_evaluated` (warning) |
 | `capability.` | `unknown` |
 | `version.` | `missing`, `unsupported` |
@@ -95,8 +95,8 @@ This matrix **supersedes** the `schemas/README.md` "Owner" column, whose task nu
 | Condition | Exit | `status` |
 |---|---|---|
 | No error diagnostics | `0` | `valid` |
-| ≥1 error diagnostic | `1` | `invalid` |
-| Unsupported/missing `apiVersion`, unknown/ambiguous kind, unreadable path, unparsable bytes, bad usage | `2` | `unsupported` or `error` |
+| ≥1 error diagnostic, including an unsupported or missing `apiVersion` (evaluated & invalid, Q9) | `1` | `invalid` |
+| Could not evaluate: unknown/ambiguous kind, unreadable path, unparsable bytes, bad usage | `2` | `error` |
 
 `--json` shape (stdout; **stable contract**, marked experimental):
 
@@ -106,7 +106,7 @@ This matrix **supersedes** the `schemas/README.md` "Owner" column, whose task nu
 
 Human output → **stderr**; `--json` → **stdout** (pipes/agents). **Read-only:** opens inputs read-only, writes no files, no temp files, no network (`jsonschema` offline), no third-party execution; exits without mutation. `Report`/`Diagnostic`/exit taxonomy are the shared contract for future `harness test`/`conformance`.
 
-**Kind detection:** `--kind` wins; else the document is matched by root-schema discriminators (`kind ∈ {Harness,Component,Preset}` for manifest; `executionLocation`/`lifecycle`/`router` for model-contract; `environmentVariableNames`/`risk`/`snapshot`/`verificationSteps` for install-plan); 0 or >1 matches → `document.kind_unknown`/`kind_ambiguous` → exit 2.
+**Kind detection:** `--kind` wins; else the document is matched by root-schema discriminators (`kind ∈ {Harness,Component,Preset}` for manifest; `executionLocation`/`lifecycle`/`router` for model-contract; `environmentVariableNames`/`risk`/`snapshot`/`verificationSteps` for install-plan); 0 or >1 matches → `document.unknown_kind`/`document.kind_ambiguous` → exit 2.
 
 ## 7. Corpus + test strategy
 
@@ -156,16 +156,16 @@ harness validate <path> --json
   → read bytes (read-only)                        [io.read_failed → 2]
   → parse (JSON | YAML 1.2, dup-key fail-closed)  [parse.* → 2]
   → document: detect kind + read apiVersion        [document.* → 2]
-  → L1 structural   (embedded schema Registry)     [schema.*]
-  → L2 semantic      (identity/deps/components/permissions) [semantic.*]
-  → L3 capability    (known-set lookup)            [capability.*]
-  → L4 version       (supported set + migration stub) [version.*]  ← short-circuits before L1 when apiVersion missing/unsupported
-  → L5 filesystem    (declared-path safety)        [path.*]
+  → structural   (embedded schema Registry)        [schema.*]
+  → version      (supported set + migration stub)  [version.*]  ← supersedes the structural /apiVersion issue (one issue → one code); unsupported/missing = invalid (exit 1)
+  → semantic     (identity/deps/components/permissions) [semantic.*]
+  → capability   (known-set lookup)                [capability.*]
+  → filesystem   (declared-path safety)            [path.*]
   → deterministic sort → Report
-  → exit 0 (valid) | 1 (errors) | 2 (unsupported/error)
+  → exit 0 (valid) | 1 (invalid) | 2 (error)
 ```
 
-Dedupe rule: when L4 emits `version.missing`/`version.unsupported`, the L1 `schema.required`/`schema.const` on `/apiVersion` for the same document is suppressed so one issue yields one code.
+Dedupe rule: when the version gate emits `version.missing`/`version.unsupported`, the structural `schema.required`/`schema.const` on `/apiVersion` for the same document is suppressed so one issue yields one code.
 
 ## File Changes
 
@@ -188,7 +188,7 @@ Additive only: no existing behavior replaced, no install/apply/revert/trust/supp
 ## Open Questions
 
 - [ ] **Q6** capability known-set source — recommend a checked-in `extensions/registry.json` (or `schemas/capabilities.json`) with a documented empty set; **§58 stays OPEN** (does not close Core-vs-extension).
-- [ ] **Q9** unsupported `apiVersion` = exit **2** (recommended; "cannot evaluate the generation") — needs spec ratification.
+- [x] **Q9** unsupported or missing `apiVersion` = **exit 1**, `status: invalid` — **RATIFIED, the spec wins** (`specs/harness-cli/spec.md` "Exit-code taxonomy (Q9)"; `specs/harness-validator/spec.md` "Supported version gate"). The earlier cannot-evaluate recommendation is withdrawn; §6 and §11 are corrected so no downstream agent implements an exit-2 classification for the version layer. §58 stays OPEN.
 - [ ] **Q10** `--json` stability — recommended: publish as experimental-but-stable shape, version it with the validator crate.
 - [ ] **Q13** `windows-gnu` `as` fix ownership — must be resolved before F4 (installation, not the pins).
 - [ ] **Q7** YAML crate final pin — confirm `serde-saphyr` builds on `windows-gnu` in the apply spike; else `yaml_serde`.

@@ -22,8 +22,15 @@ and the `expect { path, keyword }` blocks are byte-for-byte the archived ones.
 ```
 corpus.json         7 positive entries, 16 negative entries (golden expectations)
 positive/           7 instances (5 JSON, 2 YAML) that MUST validate
-negative/           16 instances that MUST be rejected with the expected {path, keyword}
+negative/           16 corpus instances that MUST be rejected with the expected
+                    {path, keyword}, plus adversarial extras driven directly by
+                    tests/adversarial.rs (e.g. capability.unknown.json)
 ```
+
+`negative/` may hold fixtures beyond the frozen corpus (capability/version
+adversarial cases). Only the entries listed in `corpus.json` are corpus entries;
+the extras are driven directly by `tests/adversarial.rs` and are not part of the
+7/16 golden counts.
 
 `keyword` is the JSON Schema keyword the frozen L1 corpus recorded; the Rust
 validator maps it to its own code namespace (`keyword` -> `schema.<keyword>`).

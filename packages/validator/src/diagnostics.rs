@@ -113,6 +113,22 @@ impl Code {
         Code("semantic.not_evaluated")
     }
 
+    // --- capability.* ---------------------------------------------------
+    #[must_use]
+    pub const fn capability_unknown() -> Self {
+        Code("capability.unknown")
+    }
+
+    // --- version.* ------------------------------------------------------
+    #[must_use]
+    pub const fn version_missing() -> Self {
+        Code("version.missing")
+    }
+    #[must_use]
+    pub const fn version_unsupported() -> Self {
+        Code("version.unsupported")
+    }
+
     // --- schema.* -------------------------------------------------------
     #[must_use]
     pub const fn schema_unresolved_ref() -> Self {

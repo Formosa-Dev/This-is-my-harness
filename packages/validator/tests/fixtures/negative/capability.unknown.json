@@ -1,0 +1,17 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "capability-unknown",
+    "version": "1.0.0"
+  },
+  "spec": {
+    "requirements": {
+      "modelCapabilities": [
+        {
+          "capability": "models.definitely-not-registered"
+        }
+      ]
+    }
+  }
+}

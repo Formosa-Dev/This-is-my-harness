@@ -1,0 +1,13 @@
+{
+  "$comment": "Known-capability registry consumed read-only by the Rust validator (F2-07). NON-NORMATIVE default set: which capabilities exist, and the Core-versus-extension distinction, remain OPEN (decision record §58; spec/core/core-vs-extension.md). This file fixes no normative closure; it is the checked-in default a declared capability is resolved against. A declared identifier absent here is capability.unknown; a missing or unreadable registry is a loud failure, never an implicit 'all known'.",
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "capabilities": [
+    "backends.local-inference",
+    "models.escalation",
+    "models.structured-decision",
+    "models.text-generation",
+    "runtime.node",
+    "services.vector-store",
+    "tools.search"
+  ]
+}
