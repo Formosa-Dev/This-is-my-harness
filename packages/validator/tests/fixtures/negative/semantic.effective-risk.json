@@ -1,0 +1,42 @@
+{
+  "runtime": "runtime.node",
+  "runtimeVersion": ">=20 <23",
+  "project": "/home/example/project",
+  "scope": "project",
+  "harness": {
+    "identifier": "https://example.org/h/example-owner/example-harness@1.0.0",
+    "version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "scripts/post-install.sh",
+      "action": "create"
+    }
+  ],
+  "conflicts": [],
+  "adaptations": [],
+  "unsupportedCapabilities": [],
+  "mcp": [],
+  "hooks": [
+    {
+      "path": "scripts/post-install.sh",
+      "interpreter": "sh",
+      "riskClass": "C"
+    }
+  ],
+  "services": [],
+  "environmentVariableNames": [],
+  "risk": {
+    "effectiveClass": "B",
+    "autonomyLevel": 2
+  },
+  "snapshot": {
+    "id": "snap-0005",
+    "covers": ["scripts/post-install.sh"]
+  },
+  "verificationSteps": [
+    {
+      "description": "Confirm the hook was executed."
+    }
+  ]
+}

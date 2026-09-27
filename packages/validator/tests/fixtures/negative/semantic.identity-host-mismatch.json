@@ -1,0 +1,19 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "host-mismatch-harness",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "extends": [
+      {
+        "reference": "https://one.example/h/acme/base"
+      },
+      {
+        "reference": "https://two.example/h/acme/base"
+      }
+    ]
+  }
+}

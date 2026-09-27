@@ -1,0 +1,19 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "coherence-harness",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "requirements": {
+      "services": [
+        {
+          "capability": "services.vector-store",
+          "required": true
+        }
+      ]
+    }
+  }
+}

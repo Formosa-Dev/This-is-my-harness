@@ -63,6 +63,56 @@ impl Code {
         Code("document.kind_ambiguous")
     }
 
+    // --- semantic.* -----------------------------------------------------
+    #[must_use]
+    pub const fn semantic_identity_ref_short_forbidden() -> Self {
+        Code("semantic.identity_ref_short_forbidden")
+    }
+    #[must_use]
+    pub const fn semantic_identity_host_mismatch() -> Self {
+        Code("semantic.identity_host_mismatch")
+    }
+    #[must_use]
+    pub const fn semantic_kind_composition() -> Self {
+        Code("semantic.kind_composition")
+    }
+    #[must_use]
+    pub const fn semantic_dependency_cycle() -> Self {
+        Code("semantic.dependency_cycle")
+    }
+    #[must_use]
+    pub const fn semantic_dependency_order() -> Self {
+        Code("semantic.dependency_order")
+    }
+    #[must_use]
+    pub const fn semantic_permission_coverage() -> Self {
+        Code("semantic.permission_coverage")
+    }
+    #[must_use]
+    pub const fn semantic_effective_risk() -> Self {
+        Code("semantic.effective_risk")
+    }
+    #[must_use]
+    pub const fn semantic_autonomy_below_floor() -> Self {
+        Code("semantic.autonomy_below_floor")
+    }
+    #[must_use]
+    pub const fn semantic_env_value_like() -> Self {
+        Code("semantic.env_value_like")
+    }
+    #[must_use]
+    pub const fn semantic_license_shape() -> Self {
+        Code("semantic.license_shape")
+    }
+    #[must_use]
+    pub const fn semantic_license_conflict() -> Self {
+        Code("semantic.license_conflict")
+    }
+    #[must_use]
+    pub const fn semantic_not_evaluated() -> Self {
+        Code("semantic.not_evaluated")
+    }
+
     // --- schema.* -------------------------------------------------------
     #[must_use]
     pub const fn schema_unresolved_ref() -> Self {

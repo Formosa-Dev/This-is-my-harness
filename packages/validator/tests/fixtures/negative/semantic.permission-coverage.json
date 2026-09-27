@@ -1,0 +1,18 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "coverage-harness",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "components": [
+      {
+        "type": "Service",
+        "name": "local-service",
+        "path": "services/local-service"
+      }
+    ]
+  }
+}

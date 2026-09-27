@@ -1,0 +1,21 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "license-open-harness",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "components": [
+      {
+        "type": "Model",
+        "name": "example-model",
+        "path": "models/example-model.json",
+        "payload": {
+          "license": "MIT"
+        }
+      }
+    ]
+  }
+}

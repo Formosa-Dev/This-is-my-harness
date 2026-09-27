@@ -1,0 +1,14 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Component",
+  "metadata": {
+    "name": "base-component",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "requirements": {
+      "runtime": "runtime.node"
+    }
+  }
+}

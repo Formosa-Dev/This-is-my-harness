@@ -1,0 +1,16 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "cycle-harness",
+    "version": "1.0.0",
+    "owner": "acme"
+  },
+  "spec": {
+    "extends": [
+      {
+        "reference": "@acme/cycle-harness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "input": {
+    "type": "object",
+    "description": "The request the model receives."
+  },
+  "output": {
+    "type": "object",
+    "description": "The typed completion the model emits."
+  },
+  "capabilities": ["models.text-generation"],
+  "resources": {
+    "os": ["linux"],
+    "arch": ["x86_64"],
+    "ram": "512MiB",
+    "disk": "100MiB"
+  },
+  "executionLocation": "local",
+  "fallback": "When the model or its host is unavailable, abstain and defer to the caller.",
+  "version": "1.0.0",
+  "license": "licensed under the Apache License Version 2.0",
+  "artifactSource": {
+    "provider": "example-registry",
+    "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference": "example.org/example-owner/example-harness/example-model:1.0.0"
+  }
+}

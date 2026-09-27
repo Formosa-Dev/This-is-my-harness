@@ -3,10 +3,11 @@
 //!
 //! # Status
 //!
-//! Work unit 2: schema embedding, parsing, diagnostics, kind detection and the
-//! **structural** (JSON Schema) layer, wired to the promoted corpus. The
-//! semantic, capability and version layers and the full `validate(&Source,
-//! &Options)` CLI entry land in later work units (F2-06..F2-12).
+//! Work units 2 and 3: schema embedding, parsing, diagnostics, kind detection,
+//! the **structural** (JSON Schema) layer and the **document-local semantic**
+//! layer, wired to the promoted corpus. The capability and version layers and
+//! the full `validate(&Source, &Options)` CLI entry land in later work units
+//! (F2-07..F2-12).
 //!
 //! ```text
 //! src/lib.rs        module wiring + the work-unit-2 structural entry
@@ -15,7 +16,7 @@
 //! src/parse.rs      bytes -> serde_json::Value (JSON / YAML 1.2, fail-closed)
 //! src/document.rs   kind detection + apiVersion read
 //! src/structural.rs L1 — JSON Schema layer
-//! src/semantic/*    L2 — identity / dependencies / components / permissions (later)
+//! src/semantic/*    L2 — document-local identity / dependencies / components / permissions
 //! src/capability.rs L3 — known-capability lookup (later)
 //! src/version.rs    L4 — supported apiVersion set + migration stub (later)
 //! src/pathsafe.rs   L5 — declared-path safety (later)
@@ -38,6 +39,7 @@ pub mod diagnostics;
 pub mod document;
 pub mod parse;
 pub mod registry;
+pub mod semantic;
 pub mod structural;
 
 pub use diagnostics::{Code, Diagnostic, Report, Severity, Status};
