@@ -453,3 +453,220 @@ fn positive_corpus_capabilities_are_all_known() {
         "the positive corpus must exercise at least one declared capability"
     );
 }
+
+// --- WU5 declared-path safety + layered `validate` (tasks 5.1-5.6) ----------
+//
+// The filesystem layer checks paths *declared in the document* against a
+// provided project root (PARTIAL, F2-08). The layered `validate()` entry wires
+// structural -> version -> semantic -> capability -> filesystem and classifies
+// un-evaluable inputs as `Status::Error` (exit-2 semantics).
+
+fn full_report(file: &str) -> Report {
+    let bytes = read_fixture(file);
+    harness_validator::validate(
+        &harness_validator::Source {
+            bytes: &bytes,
+            format: Format::from_filename(file),
+        },
+        &harness_validator::Options::default(),
+    )
+}
+
+#[test]
+fn declared_dotdot_escape_is_rejected_as_traversal() {
+    let value = serde_json::json!({
+        "spec": { "components": [ { "type": "Skill", "path": "../outside/SKILL.md" } ] }
+    });
+    let diagnostics = harness_validator::pathsafe::validate(Kind::Manifest, &value, None);
+    assert_eq!(diagnostics.len(), 1, "got {diagnostics:?}");
+    assert_eq!(diagnostics[0].path, "/spec/components/0/path");
+    assert_eq!(diagnostics[0].code.as_str(), "path.traversal");
+}
+
+#[test]
+fn declared_absolute_path_is_rejected() {
+    let value = serde_json::json!({
+        "spec": { "components": [ { "type": "Skill", "path": "/etc/passwd" } ] }
+    });
+    let diagnostics = harness_validator::pathsafe::validate(Kind::Manifest, &value, None);
+    assert_eq!(diagnostics.len(), 1, "got {diagnostics:?}");
+    assert_eq!(diagnostics[0].code.as_str(), "path.absolute");
+}
+
+#[test]
+fn a_declared_path_that_stays_inside_the_root_is_safe() {
+    assert_eq!(
+        harness_validator::pathsafe::classify("a/../b"),
+        harness_validator::pathsafe::Verdict::Safe
+    );
+    let value = serde_json::json!({
+        "spec": { "components": [ { "type": "Skill", "path": "skills/example-skill" } ] }
+    });
+    assert!(harness_validator::pathsafe::validate(Kind::Manifest, &value, None).is_empty());
+}
+
+#[test]
+fn symlink_escaping_the_root_is_rejected() {
+    use std::path::{Path, PathBuf};
+
+    // A synthetic resolver stands in for the filesystem so the containment
+    // logic is provable without creating a real symlink (which, on Windows,
+    // requires privileges). `resolve` maps `/project/link` to an outside target.
+    let resolve = |path: &Path| -> Option<PathBuf> {
+        if path == Path::new("/project") {
+            Some(PathBuf::from("/project"))
+        } else if path == Path::new("/project/link") {
+            Some(PathBuf::from("/outside/target"))
+        } else {
+            None
+        }
+    };
+    let issue = harness_validator::pathsafe::check_with_resolver(
+        "link",
+        Some(Path::new("/project")),
+        &resolve,
+    );
+    assert_eq!(
+        issue,
+        Some(harness_validator::pathsafe::PathIssue::SymlinkEscape)
+    );
+
+    assert!(harness_validator::pathsafe::escapes_root(
+        Path::new("/project"),
+        Path::new("/outside/target")
+    ));
+    assert!(!harness_validator::pathsafe::escapes_root(
+        Path::new("/project"),
+        Path::new("/project/skills/x")
+    ));
+}
+
+#[cfg(unix)]
+#[test]
+fn a_real_symlink_outside_the_root_is_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let base = std::env::temp_dir().join(format!("harness-pathsafe-{}", std::process::id()));
+    let root = base.join("project");
+    let outside = base.join("outside");
+    std::fs::create_dir_all(&root).expect("create root");
+    std::fs::create_dir_all(&outside).expect("create outside");
+    std::fs::write(outside.join("secret.txt"), b"x").expect("write target");
+    symlink(&outside, root.join("link")).expect("create symlink");
+
+    let issue = harness_validator::pathsafe::check("link/secret.txt", Some(&root));
+    assert_eq!(
+        issue,
+        Some(harness_validator::pathsafe::PathIssue::SymlinkEscape),
+        "a symlink escaping the root must be rejected"
+    );
+
+    std::fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn full_validate_rejects_a_declared_traversal_path() {
+    let report = full_report("negative/path.traversal.json");
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(has_error(
+        &report,
+        "/spec/components/0/path",
+        "path.traversal"
+    ));
+}
+
+#[test]
+fn full_validate_rejects_a_declared_absolute_path() {
+    let report = full_report("negative/path.absolute.json");
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(has_error(
+        &report,
+        "/spec/components/0/path",
+        "path.absolute"
+    ));
+}
+
+#[test]
+fn full_validate_unknown_kind_is_error_status() {
+    // Zero discriminators: the kind cannot be determined -> cannot evaluate.
+    let report = full_report("negative/manifest.unknown-kind.json");
+    assert_eq!(report.status, Status::Error, "got {report:?}");
+    assert!(has_error(&report, "", "document.unknown_kind"));
+}
+
+#[test]
+fn full_validate_unparsable_json_is_error_status() {
+    let report = harness_validator::validate(
+        &harness_validator::Source {
+            bytes: b"{ not json",
+            format: Format::Json,
+        },
+        &harness_validator::Options::default(),
+    );
+    assert_eq!(report.status, Status::Error, "got {report:?}");
+    assert_eq!(report.errors[0].code.as_str(), "parse.invalid");
+}
+
+#[test]
+fn full_validate_inline_hook_plan_is_invalid_at_the_entry_pointer() {
+    let report = full_report("negative/install-plan.hooks-inline.json");
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(has_error(
+        &report,
+        "/hooks/0",
+        "schema.unevaluatedProperties"
+    ));
+}
+
+#[test]
+fn full_validate_plan_timestamp_is_invalid() {
+    let report = full_report("negative/install-plan.timestamp.json");
+    assert_eq!(report.status, Status::Invalid, "got {report:?}");
+    assert!(has_error(&report, "", "schema.unevaluatedProperties"));
+}
+
+#[test]
+fn full_validate_kind_override_uses_the_named_schema() {
+    // Without the override the kind is undetectable (exit 2); with `--kind
+    // manifest` the document is checked against the manifest root schema, so the
+    // unknown `kind` becomes a structural `schema.enum` (evaluated & invalid).
+    let bytes = read_fixture("negative/manifest.unknown-kind.json");
+    let source = harness_validator::Source {
+        bytes: &bytes,
+        format: Format::Json,
+    };
+    let detected = harness_validator::validate(&source, &harness_validator::Options::default());
+    assert_eq!(detected.status, Status::Error, "got {detected:?}");
+
+    let overridden = harness_validator::validate(
+        &source,
+        &harness_validator::Options {
+            kind: Some(Kind::Manifest),
+            root: None,
+        },
+    );
+    assert_eq!(overridden.status, Status::Invalid, "got {overridden:?}");
+    assert!(has_error(&overridden, "/kind", "schema.enum"));
+}
+
+#[test]
+fn positive_corpus_is_valid_under_the_full_pipeline() {
+    let raw = std::fs::read_to_string(fixtures_dir().join("corpus.json"))
+        .expect("the promoted corpus must be readable");
+    let corpus: CorpusPositives = serde_json::from_str(&raw).expect("corpus must parse");
+    for entry in &corpus.positive {
+        let report = full_report(&entry.file);
+        assert_eq!(
+            report.status,
+            Status::Valid,
+            "{}: expected valid under the full pipeline, got {report:?}",
+            entry.file
+        );
+        assert!(
+            report.errors.is_empty(),
+            "{}: unexpected errors {:?}",
+            entry.file,
+            report.errors
+        );
+    }
+}

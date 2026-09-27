@@ -1,0 +1,17 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "path-traversal-harness",
+    "version": "1.0.0"
+  },
+  "spec": {
+    "components": [
+      {
+        "type": "Skill",
+        "name": "escape",
+        "path": "../outside/SKILL.md"
+      }
+    ]
+  }
+}

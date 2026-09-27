@@ -118,6 +118,14 @@ impl Code {
     pub const fn capability_unknown() -> Self {
         Code("capability.unknown")
     }
+    /// The checked-in known-capability registry is absent or malformed. This is
+    /// a loud, cannot-evaluate failure (exit-2 semantics), never a silent
+    /// "all known" fallback. (Necessary addition to the design §5 catalogue: the
+    /// capability requirement names the condition but no code.)
+    #[must_use]
+    pub const fn capability_registry_unavailable() -> Self {
+        Code("capability.registry_unavailable")
+    }
 
     // --- version.* ------------------------------------------------------
     #[must_use]
@@ -137,6 +145,30 @@ impl Code {
     #[must_use]
     pub const fn schema_other() -> Self {
         Code("schema.other")
+    }
+
+    // --- path.* (filesystem layer, F2-08) -------------------------------
+    #[must_use]
+    pub const fn path_traversal() -> Self {
+        Code("path.traversal")
+    }
+    #[must_use]
+    pub const fn path_absolute() -> Self {
+        Code("path.absolute")
+    }
+    #[must_use]
+    pub const fn path_symlink_escape() -> Self {
+        Code("path.symlink_escape")
+    }
+
+    // --- io.* / usage.* (pre-validation, cannot-evaluate) ---------------
+    #[must_use]
+    pub const fn io_read_failed() -> Self {
+        Code("io.read_failed")
+    }
+    #[must_use]
+    pub const fn usage_ambiguous_input() -> Self {
+        Code("usage.ambiguous_input")
     }
 
     /// Map a JSON Schema keyword to this validator's stable `schema.*` code.
@@ -249,6 +281,27 @@ impl Diagnostic {
             self.message.as_str(),
         )
     }
+
+    /// The document-root pointer rendered for humans (`""` -> `<root>`). The
+    /// machine contract keeps the raw JSON Pointer in [`Diagnostic::to_json`].
+    #[must_use]
+    pub fn path_display(&self) -> &str {
+        if self.path.is_empty() {
+            "<root>"
+        } else {
+            &self.path
+        }
+    }
+
+    /// The documented `--json` diagnostic object: `{path, code, message}`.
+    #[must_use]
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "path": self.path,
+            "code": self.code.as_str(),
+            "message": self.message,
+        })
+    }
 }
 
 impl Ord for Diagnostic {
@@ -274,6 +327,19 @@ pub enum Status {
     Error,
 }
 
+impl Status {
+    /// The stable `--json` status token; the CLI exit code is derived from it
+    /// (`valid` -> 0, `invalid` -> 1, `error` -> 2).
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Status::Valid => "valid",
+            Status::Invalid => "invalid",
+            Status::Error => "error",
+        }
+    }
+}
+
 /// A validation report: status plus deterministically ordered diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
@@ -289,6 +355,7 @@ fn is_fatal(code: &str) -> bool {
         || code.starts_with("io.")
         || code.starts_with("usage.")
         || code == "schema.unresolved_ref"
+        || code == "capability.registry_unavailable"
 }
 
 impl Report {
@@ -324,6 +391,24 @@ impl Report {
     #[must_use]
     pub fn is_valid(&self) -> bool {
         self.status == Status::Valid
+    }
+
+    /// The documented `--json` report shape:
+    /// `{status, errors:[{path, code, message}], warnings:[...]}`.
+    ///
+    /// `status` is one of `valid | invalid | error`; `errors` holds every error
+    /// diagnostic (empty when valid); `warnings` holds the not-evaluated
+    /// notices. Exactly one such object is emitted on stdout.
+    #[must_use]
+    pub fn to_json(&self) -> serde_json::Value {
+        let errors: Vec<serde_json::Value> = self.errors.iter().map(Diagnostic::to_json).collect();
+        let warnings: Vec<serde_json::Value> =
+            self.warnings.iter().map(Diagnostic::to_json).collect();
+        serde_json::json!({
+            "status": self.status.as_str(),
+            "errors": errors,
+            "warnings": warnings,
+        })
     }
 }
 

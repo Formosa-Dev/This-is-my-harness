@@ -14,3 +14,7 @@ path = "src/main.rs"
 [dependencies]
 harness-validator = { path = "../validator" }
 clap.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true

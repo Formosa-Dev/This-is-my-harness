@@ -3,24 +3,24 @@
 //!
 //! # Status
 //!
-//! Work units 2–4: schema embedding, parsing, diagnostics, kind detection, the
+//! Work units 2–5: schema embedding, parsing, diagnostics, kind detection, the
 //! **structural** (JSON Schema) layer, the **document-local semantic** layer,
-//! the **version** gate (with the one-issue-one-code dedupe) and the
-//! **capability** lookup, wired to the promoted corpus. The declared-path safety
-//! layer and the full `validate(&Source, &Options)` CLI entry land in later work
-//! units (F2-08..F2-12).
+//! the **version** gate (with the one-issue-one-code dedupe), the
+//! **capability** lookup and the **filesystem** declared-path safety layer,
+//! wired into one [`validate(&Source, &Options)`] entry over the promoted
+//! corpus. Documentation lands in a later work unit (F2-12).
 //!
 //! ```text
-//! src/lib.rs        module wiring + the work-unit-2/4 library entries
+//! src/lib.rs        module wiring + the layered `validate` entry
 //! src/diagnostics.rs Diagnostic { path, code, message }, Severity, Code, Report
 //! src/registry.rs   embedded schema table + one lazily-built offline Registry
 //! src/parse.rs      bytes -> serde_json::Value (JSON / YAML 1.2, fail-closed)
-//! src/document.rs   kind detection + apiVersion read
+//! src/document.rs   kind detection + apiVersion read + kind -> schema $id
 //! src/structural.rs structural layer — JSON Schema
 //! src/version.rs    version layer — supported apiVersion set + migration stub
 //! src/semantic/*    semantic layer — document-local identity / deps / components / permissions
 //! src/capability.rs capability layer — known-capability lookup (embedded registry)
-//! src/pathsafe.rs   filesystem layer — declared-path safety (later)
+//! src/pathsafe.rs   filesystem layer — declared-path safety (PARTIAL, F2-08)
 //! ```
 //!
 //! # Contracts
@@ -40,6 +40,7 @@ pub mod capability;
 pub mod diagnostics;
 pub mod document;
 pub mod parse;
+pub mod pathsafe;
 pub mod registry;
 pub mod semantic;
 pub mod structural;
@@ -51,7 +52,79 @@ pub use document::{Detection, Kind};
 pub use parse::Format;
 pub use version::Migration;
 
+use std::path::PathBuf;
+
 use serde_json::Value;
+
+/// The bytes to validate plus their encoding.
+#[derive(Debug, Clone, Copy)]
+pub struct Source<'a> {
+    /// The raw document bytes (already read by the caller; this crate performs
+    /// no input I/O).
+    pub bytes: &'a [u8],
+    /// The encoding to parse with (usually from the filename).
+    pub format: Format,
+}
+
+/// Optional validation inputs.
+#[derive(Debug, Clone, Default)]
+pub struct Options {
+    /// A `--kind` override. When set, kind detection is skipped and the document
+    /// is validated against the named kind's root schema.
+    pub kind: Option<Kind>,
+    /// The provided project root for the filesystem (declared-path) layer. When
+    /// absent, only lexical path checks (absolute/traversal) run.
+    pub root: Option<PathBuf>,
+}
+
+/// Validate one document against the five layers, in the spec's fixed order:
+///
+/// ```text
+/// structural -> version -> semantic -> capability -> filesystem
+/// ```
+///
+/// Every layer whose preconditions hold runs and **aggregates** its diagnostics
+/// (no short-circuit). The one-issue-one-code dedupe collapses the version gate
+/// over the structural `/apiVersion` issue.
+///
+/// This entry is **read-only and pure**: it returns a [`Report`] and never
+/// exits the process, writes to stdout, mutates the filesystem, or reaches the
+/// network. Pre-validation failures that make the document un-evaluable
+/// (`parse.*`, `document.*`, a broken capability registry) are returned as a
+/// [`Status::Error`] report; a missing or unsupported `apiVersion` is
+/// evaluated-and-invalid ([`Status::Invalid`], exit-1 semantics, Q9).
+#[must_use]
+pub fn validate(source: &Source<'_>, options: &Options) -> Report {
+    let instance = match parse::parse(source.bytes, source.format) {
+        Ok(instance) => instance,
+        Err(diagnostic) => return Report::from_diagnostics(vec![diagnostic]),
+    };
+
+    let kind = match options.kind {
+        Some(kind) => kind,
+        None => match document::detect_or_diagnose(&instance) {
+            Ok((kind, _api_version)) => kind,
+            Err(diagnostic) => return Report::from_diagnostics(vec![diagnostic]),
+        },
+    };
+
+    let mut diagnostics = structural_diagnostics(kind.schema_id(), &instance);
+    if version::applies_to(kind) {
+        diagnostics.extend(version::validate(&instance));
+    }
+    diagnostics.extend(semantic::validate(kind, &instance));
+    match capability::validate(kind, &instance) {
+        Ok(capability_diagnostics) => diagnostics.extend(capability_diagnostics),
+        Err(error) => diagnostics.push(Diagnostic::error(
+            "",
+            Code::capability_registry_unavailable(),
+            error.to_string(),
+        )),
+    }
+    diagnostics.extend(pathsafe::validate(kind, &instance, options.root.as_deref()));
+
+    Report::from_diagnostics(version::dedupe(diagnostics))
+}
 
 /// Parse `bytes` and validate the document against the embedded schema
 /// identified by `schema_id`, returning a [`Report`].

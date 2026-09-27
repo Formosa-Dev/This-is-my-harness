@@ -1,0 +1,17 @@
+{
+  "apiVersion": "thisismyharness.dev/v1alpha1",
+  "kind": "Harness",
+  "metadata": {
+    "name": "path-absolute-harness",
+    "version": "1.0.0"
+  },
+  "spec": {
+    "components": [
+      {
+        "type": "Skill",
+        "name": "rooted",
+        "path": "/etc/passwd"
+      }
+    ]
+  }
+}

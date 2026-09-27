@@ -68,12 +68,25 @@ pub fn supported_list() -> String {
     SUPPORTED_API_VERSIONS.join(", ")
 }
 
+/// Whether the version gate applies to `kind`.
+///
+/// Only the **manifest** root declares an `apiVersion` at v1alpha1. The
+/// model-contract and install-plan roots are closed objects with no such field
+/// (`unevaluatedProperties: false`), so the gate's precondition does not hold
+/// for them: a *missing* `apiVersion` is only meaningful where one is required.
+/// Applying the gate to those roots would contradict the corpus-reuse
+/// requirement (a positive model contract has no `apiVersion`).
+#[must_use]
+pub const fn applies_to(kind: crate::document::Kind) -> bool {
+    matches!(kind, crate::document::Kind::Manifest)
+}
+
 /// Evaluate the version gate for a parsed document.
 ///
 /// Returns an empty vector when the declared generation is supported; otherwise
 /// exactly one `version.*` error at `/apiVersion`. It never returns a
 /// "cannot-evaluate" diagnostic: an unsupported generation is evaluated and
-/// invalid.
+/// invalid. Call [`applies_to`] first to confirm the gate's precondition.
 #[must_use]
 pub fn validate(value: &Value) -> Vec<Diagnostic> {
     match crate::document::read_api_version(value) {

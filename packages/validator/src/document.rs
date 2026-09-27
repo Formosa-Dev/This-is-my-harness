@@ -31,6 +31,31 @@ impl Kind {
             Kind::InstallPlan => "install-plan",
         }
     }
+
+    /// The embedded root schema `$id` for this kind.
+    #[must_use]
+    pub const fn schema_id(self) -> &'static str {
+        match self {
+            Kind::Manifest => "https://thisismyharness.dev/schemas/v1alpha1/harness.schema.json",
+            Kind::ModelContract => {
+                "https://thisismyharness.dev/schemas/v1alpha1/model-contract.schema.json"
+            }
+            Kind::InstallPlan => {
+                "https://thisismyharness.dev/schemas/v1alpha1/install-plan.schema.json"
+            }
+        }
+    }
+
+    /// Parse a `--kind` override name (`manifest | model-contract | install-plan`).
+    #[must_use]
+    pub fn from_name(name: &str) -> Option<Kind> {
+        match name {
+            "manifest" => Some(Kind::Manifest),
+            "model-contract" => Some(Kind::ModelContract),
+            "install-plan" => Some(Kind::InstallPlan),
+            _ => None,
+        }
+    }
 }
 
 /// Outcome of kind detection.
